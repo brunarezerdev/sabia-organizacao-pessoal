@@ -1,0 +1,69 @@
+# ---------------------------------------------------------------------------
+# Segredos e credenciais — NUNCA versionar
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+credentials.json
+client_secret*.json
+token.json
+token*.pickle
+*session*.txt
+*cookie*
+.secrets/
+secrets/
+service-account*.json
+oauth*.json
+
+# ---------------------------------------------------------------------------
+# Dados reais — este repositório usa apenas dados fictícios
+# ---------------------------------------------------------------------------
+dados/
+data/
+vault/
+*.sqlite
+*.sqlite3
+*.db
+exportacoes/
+backup/
+backups/
+
+# ---------------------------------------------------------------------------
+# Fila local e artefatos de execução
+# ---------------------------------------------------------------------------
+.fila/
+*.log
+logs/
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ---------------------------------------------------------------------------
+# Sistema operacional / editores
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~

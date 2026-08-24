@@ -1,0 +1,13 @@
+# Dependência obrigatória: clientes HTTP das três APIs.
+requests>=2.31
+
+# Opcional — só é necessária para a classificação por IA.
+# Sem ela, o sistema usa o classificador heurístico local.
+# anthropic>=0.40
+
+# Opcional — só é necessária para o fluxo interativo de autorização do Google,
+# rodado uma única vez por scripts/autorizar_google.py.
+# google-auth-oauthlib>=1.2
+
+# Desenvolvimento.
+pytest>=8.0

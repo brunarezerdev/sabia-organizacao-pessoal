@@ -1,0 +1,75 @@
+[
+  {
+    "id": "exemplo-01",
+    "texto": "Reunião com a equipe de produto na quinta às 14h",
+    "agente_esperado": "secretaria",
+    "categoria_esperada": "compromisso"
+  },
+  {
+    "id": "exemplo-02",
+    "texto": "Lembrar de renovar a assinatura do software amanhã",
+    "agente_esperado": "secretaria",
+    "categoria_esperada": "lembrete"
+  },
+  {
+    "id": "exemplo-03",
+    "texto": "Acabou o café, comprar no mercado",
+    "agente_esperado": "lifestyle",
+    "categoria_esperada": "compras"
+  },
+  {
+    "id": "exemplo-04",
+    "texto": "Cardápio de terça: macarrão com legumes",
+    "agente_esperado": "lifestyle",
+    "categoria_esperada": "cardapio"
+  },
+  {
+    "id": "exemplo-05",
+    "texto": "Faxina pesada da cozinha todo sábado",
+    "agente_esperado": "lifestyle",
+    "categoria_esperada": "limpeza"
+  },
+  {
+    "id": "exemplo-06",
+    "texto": "Gastei R$ 45,90 no almoço de hoje",
+    "agente_esperado": "financeira",
+    "categoria_esperada": "gasto"
+  },
+  {
+    "id": "exemplo-07",
+    "texto": "Meta de juntar 3000 reais até dezembro",
+    "agente_esperado": "financeira",
+    "categoria_esperada": "meta"
+  },
+  {
+    "id": "exemplo-08",
+    "texto": "Gastei no posto ontem",
+    "agente_esperado": "financeira",
+    "categoria_esperada": "gasto",
+    "observacao": "sem valor no texto — deve pedir confirmação"
+  },
+  {
+    "id": "exemplo-09",
+    "texto": "Projeto do portfólio: escrever a página inicial",
+    "agente_esperado": "projetos",
+    "categoria_esperada": "tarefa"
+  },
+  {
+    "id": "exemplo-10",
+    "texto": "Entrega do relatório trimestral em 30/09",
+    "agente_esperado": "projetos",
+    "categoria_esperada": "marco"
+  },
+  {
+    "id": "exemplo-11",
+    "texto": "Estudar integração de APIs na sexta às 20h",
+    "agente_esperado": "educacional",
+    "categoria_esperada": "estudo"
+  },
+  {
+    "id": "exemplo-12",
+    "texto": "Ler o artigo sobre arquitetura de agentes",
+    "agente_esperado": "educacional",
+    "categoria_esperada": "material"
+  }
+]

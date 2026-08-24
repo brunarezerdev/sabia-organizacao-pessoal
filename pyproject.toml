@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sop-pessoal"
+version = "0.1.0"
+description = "Sistema operacional pessoal: Telegram + IA + Notion + Google Agenda"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["requests>=2.31"]
+
+[project.optional-dependencies]
+ia = ["anthropic>=0.40"]
+google = ["google-auth-oauthlib>=1.2"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+sop = "sop.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
