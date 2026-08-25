@@ -44,6 +44,8 @@ class Config:
 
     notion_token: str = ""
     notion_database_id: str = ""
+    notion_regras_database_id: str = ""
+    notion_ritual_page_id: str = ""
 
     google_credentials_path: str = ""
     google_token_path: str = ""
@@ -60,6 +62,7 @@ class Config:
         default_factory=lambda: {
             "telegram": ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID_AUTORIZADO"),
             "notion": ("NOTION_TOKEN", "NOTION_DATABASE_ID"),
+            "regras": ("NOTION_TOKEN", "NOTION_REGRAS_DATABASE_ID"),
             "google_calendar": ("GOOGLE_TOKEN_PATH",),
             "ia": ("ANTHROPIC_API_KEY",),
         },
@@ -81,6 +84,8 @@ class Config:
             telegram_chat_autorizado=ler("TELEGRAM_CHAT_ID_AUTORIZADO"),
             notion_token=ler("NOTION_TOKEN"),
             notion_database_id=ler("NOTION_DATABASE_ID"),
+            notion_regras_database_id=ler("NOTION_REGRAS_DATABASE_ID"),
+            notion_ritual_page_id=ler("NOTION_RITUAL_PAGE_ID"),
             google_credentials_path=ler("GOOGLE_CREDENTIALS_PATH"),
             google_token_path=ler("GOOGLE_TOKEN_PATH"),
             google_calendar_id=ler("GOOGLE_CALENDAR_ID", "primary"),
@@ -98,6 +103,8 @@ class Config:
             "TELEGRAM_CHAT_ID_AUTORIZADO": self.telegram_chat_autorizado,
             "NOTION_TOKEN": self.notion_token,
             "NOTION_DATABASE_ID": self.notion_database_id,
+            "NOTION_REGRAS_DATABASE_ID": self.notion_regras_database_id,
+            "NOTION_RITUAL_PAGE_ID": self.notion_ritual_page_id,
             "GOOGLE_CREDENTIALS_PATH": self.google_credentials_path,
             "GOOGLE_TOKEN_PATH": self.google_token_path,
             "ANTHROPIC_API_KEY": self.anthropic_api_key,

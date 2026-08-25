@@ -204,3 +204,49 @@ flowchart TB
 A orquestradora é a única peça que conhece todas as outras. As integrações não
 se conhecem entre si — trocar o Notion por outro banco no-code é escrever uma
 classe com o método `criar_item` e passar na construção da automação.
+
+---
+
+## 7. Ciclo semanal: do compromisso à tarefa derivada
+
+O fluxo acima resolve uma mensagem. Este resolve uma semana. É o mesmo sistema
+olhando para um horizonte maior: em vez de perguntar "o que é isso", pergunta
+"o que isso exige que aconteça antes".
+
+```mermaid
+flowchart TD
+    A[Domingo, 19h<br/>cron ou comando] --> B[ritual.py]
+
+    B --> C[Google Agenda<br/>semana que terminou]
+    B --> D[Google Agenda<br/>semana que começa]
+    B --> E[Notion<br/>base de Regras]
+
+    C --> F[FECHAR<br/>compromissos em checkbox<br/>+ pergunta de balanço]
+
+    D --> G[motor de regras<br/>regras.py]
+    E --> G
+    H[lista de essenciais<br/>o que está acabando] --> G
+
+    G --> I[tarefa de efeito direto<br/>prazo = dia - antecedência]
+    G --> J[tarefa de efeito de 2ª ordem<br/>frase iniciada por Se]
+
+    I --> K[ABRIR<br/>compromissos + efeitos<br/>+ checklist + 3 prioridades]
+    J --> K
+
+    F --> L[PacoteRitual]
+    K --> L
+    L --> M[texto do Telegram]
+    L --> N[blocos do Notion<br/>to_do de verdade]
+
+    style G fill:#e7d3f5,stroke:#6b3fa0,stroke-width:2px
+    style J fill:#fff3cd,stroke:#856404,stroke-width:2px
+```
+
+O nó roxo é o único que decide alguma coisa, e mesmo ele não decide sozinho:
+todo o comportamento vem das linhas da base de Regras, que é editada no Notion
+por quem usa o sistema.
+
+O nó amarelo é o efeito borboleta propriamente dito, a tarefa que só existe se
+uma condição for verdadeira. Ela nasce junto com a tarefa direta e espera uma
+checagem humana, porque é a única parte da corrente que o sistema não tem como
+verificar sozinho.

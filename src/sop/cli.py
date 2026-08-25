@@ -9,6 +9,9 @@ Comandos:
     python -m sop escutar              # long polling do Telegram
     python -m sop worker               # consome a fila durável
     python -m sop demo                 # roda os exemplos fictícios, sem rede
+    python -m sop regras               # lista as regras se-então carregadas
+    python -m sop ritual               # monta o pacote do ritual de domingo
+    python -m sop simular              # ritual de ponta a ponta, sem rede
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ import argparse
 import json
 import sys
 import time
+from datetime import date
 from pathlib import Path
 
 from .agentes import carregar_registro
@@ -26,6 +30,14 @@ from .fila import Fila
 from .integracoes.ia import criar_adaptador
 from .modelos import Mensagem
 from .orquestradora import Orquestradora
+from .regras import (
+    MotorDeRegras,
+    estoque_de_lista,
+    eventos_do_google,
+    regras_de_lista,
+    regras_do_notion,
+)
+from .ritual import Ritual, domingo_de
 
 RAIZ = Path(__file__).resolve().parents[2]
 
@@ -183,6 +195,131 @@ def cmd_demo(config: Config, _args: argparse.Namespace) -> int:
     return 0
 
 
+# -- ritual de domingo e motor de regras ------------------------------------
+
+
+def _exemplos(nome: str) -> object:
+    return json.loads((RAIZ / "exemplos" / nome).read_text(encoding="utf-8"))
+
+
+def _carregar_motor(config: Config) -> tuple[MotorDeRegras, str]:
+    """Monta o motor com as regras do Notion, ou com os exemplos fictícios.
+
+    Sem a base de Regras configurada o sistema não trava: ele avisa e roda com
+    os exemplos, para que dê para ver o motor funcionando antes de configurar.
+    """
+    if config.pronta("regras"):
+        from .integracoes.notion import ClienteNotion
+
+        cliente = ClienteNotion(config)
+        return MotorDeRegras(regras_do_notion(cliente.regras())), "Notion"
+
+    faltando = ", ".join(config.faltando("regras"))
+    print(
+        f"Aviso: base de Regras não configurada (falta {faltando}). "
+        "Usando exemplos/regras.json.",
+        file=sys.stderr,
+    )
+    return MotorDeRegras(regras_de_lista(_exemplos("regras.json"))), "exemplos"
+
+
+def _domingo(args: argparse.Namespace) -> date:
+    if getattr(args, "domingo", None):
+        return date.fromisoformat(args.domingo)
+    return domingo_de(date.today())
+
+
+def cmd_regras(config: Config, _args: argparse.Namespace) -> int:
+    motor, fonte = _carregar_motor(config)
+    if not len(motor):
+        print("Nenhuma regra cadastrada.")
+        return 1
+
+    print(f"{len(motor)} regra(s) carregada(s) de: {fonte}\n")
+    for regra in motor.regras:
+        marca = "ativa " if regra.ativa else "parada"
+        print(f"[{marca}] {regra.nome}  ({regra.area or 'sem área'}, {regra.origem})")
+        print(f"          se    {regra.se}")
+        for texto, ordem in regra.acoes():
+            grau = "então" if ordem == 1 else "  e aí"
+            print(f"          {grau} {texto}")
+        if regra.antecedencia_dias:
+            print(f"          prazo {regra.antecedencia_dias} dia(s) antes")
+        print(f"          pega  {', '.join(regra.palavras_chave) or '(sem palavra-chave)'}\n")
+    return 0
+
+
+def _publicar(config: Config, pacote, args: argparse.Namespace) -> None:
+    """Manda o pacote para o Notion e para o Telegram, se pedirem."""
+    if args.publicar:
+        if not (config.pronta("notion") and config.notion_ritual_page_id):
+            print(
+                "Aviso: para publicar defina NOTION_TOKEN e NOTION_RITUAL_PAGE_ID.",
+                file=sys.stderr,
+            )
+        else:
+            from .integracoes.notion import ClienteNotion
+
+            enviados = ClienteNotion(config).anexar_blocos(
+                config.notion_ritual_page_id, pacote.para_blocos_notion()
+            )
+            print(f"\n{enviados} blocos acrescentados na página do ritual.")
+
+    if args.telegram:
+        if not config.pronta("telegram"):
+            print("Aviso: Telegram não configurado, nada foi enviado.", file=sys.stderr)
+        else:
+            from .integracoes.telegram import ClienteTelegram
+
+            ClienteTelegram(config).confirmar(pacote.para_telegram())
+            print("\nPacote enviado pelo Telegram.")
+
+
+def cmd_ritual(config: Config, args: argparse.Namespace) -> int:
+    """Fecha a semana que terminou e abre a que começa."""
+    motor, _ = _carregar_motor(config)
+
+    agenda = None
+    if config.pronta("google_calendar"):
+        from .integracoes.google_calendar import ClienteGoogleCalendar
+
+        agenda = ClienteGoogleCalendar(config)
+    else:
+        print(
+            "Aviso: Google Agenda não configurada, o ritual sai sem compromissos.",
+            file=sys.stderr,
+        )
+
+    pacote = Ritual(motor, agenda=agenda).pacote(_domingo(args))
+    print(pacote.para_telegram())
+    _publicar(config, pacote, args)
+    return 0
+
+
+def cmd_simular(config: Config, args: argparse.Namespace) -> int:
+    """Ritual completo com a semana fictícia de exemplos/, sem tocar em rede."""
+    dados = _exemplos("semana.json")
+    motor = MotorDeRegras(regras_de_lista(_exemplos("regras.json")))
+    domingo = date.fromisoformat(args.domingo or dados["domingo"])
+
+    pacote = Ritual(motor).pacote(
+        domingo,
+        eventos_passados=eventos_do_google(dados["semana_que_terminou"]),
+        eventos_futuros=eventos_do_google(dados["semana_que_comeca"]),
+        estoque=estoque_de_lista(dados["estoque"]),
+    )
+
+    print("Simulação com dados fictícios. Nenhuma API é chamada aqui.\n")
+    print(pacote.para_telegram())
+    print("\n" + "-" * 70)
+    print("Rastro de cada tarefa derivada, para conferência:")
+    for tarefa in pacote.abertura.efeitos + pacote.abertura.alertas_estoque:
+        grau = "efeito de 2a ordem" if tarefa.condicional else "efeito direto"
+        print(f"  {tarefa.prazo or 'sem prazo'}  {grau:<18} {tarefa.titulo}")
+        print(f"              regra: {tarefa.regra} | gatilho: {tarefa.gatilho}")
+    return 0
+
+
 # -- entrada ----------------------------------------------------------------
 
 
@@ -212,6 +349,16 @@ def construir_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("worker", help="consome a fila durável")
     p.add_argument("--limite", type=int, default=10)
 
+    sub.add_parser("regras", help="lista as regras se-então carregadas")
+
+    p = sub.add_parser("ritual", help="monta o pacote do ritual de domingo")
+    p.add_argument("--domingo", help="data do ritual (AAAA-MM-DD). Padrão: o próximo domingo")
+    p.add_argument("--publicar", action="store_true", help="anexa o pacote na página do Notion")
+    p.add_argument("--telegram", action="store_true", help="envia o pacote pelo Telegram")
+
+    p = sub.add_parser("simular", help="ritual de ponta a ponta com dados fictícios")
+    p.add_argument("--domingo", help="data do ritual (AAAA-MM-DD)")
+
     return parser
 
 
@@ -227,6 +374,9 @@ def main(argv: list[str] | None = None) -> int:
         "escutar": cmd_escutar,
         "worker": cmd_worker,
         "demo": cmd_demo,
+        "regras": cmd_regras,
+        "ritual": cmd_ritual,
+        "simular": cmd_simular,
     }
     try:
         return comandos[args.comando](config, args)

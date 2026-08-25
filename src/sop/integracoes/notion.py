@@ -16,6 +16,19 @@ Propriedades esperadas na database (crie com estes nomes e tipos):
     Data        -> date
     Observacao  -> rich_text
     Detalhes    -> rich_text
+
+Existe uma segunda database, a de Regras (`NOTION_REGRAS_DATABASE_ID`), que é a
+configuração do motor de regras se-então e é editada à mão por quem usa:
+
+    Nome                  -> title
+    Se                    -> rich_text
+    Então                 -> rich_text
+    Área                  -> select
+    Origem                -> select (Agenda ou Estoque)
+    Palavras-chave        -> rich_text (termos separados por vírgula)
+    Antecedência em dias  -> number
+    Ativa                 -> checkbox
+    Observação            -> rich_text
 """
 
 from __future__ import annotations
@@ -114,3 +127,50 @@ class ClienteNotion:
         """Confere se o token enxerga a database. Útil como health check."""
         self._chamar("GET", f"/databases/{self.config.notion_database_id}")
         return True
+
+    # -- base de Regras e página do ritual -----------------------------------
+
+    def consultar_database(
+        self, database_id: str, filtro: dict[str, Any] | None = None, limite: int = 100
+    ) -> list[dict[str, Any]]:
+        """Consulta qualquer database, paginando até o limite pedido.
+
+        Existe separado de `listar_itens` porque a base de Regras tem outro
+        esquema e outro id: ela é a configuração do sistema, não o registro.
+        """
+        paginas: list[dict[str, Any]] = []
+        cursor: str | None = None
+        while len(paginas) < limite:
+            corpo: dict[str, Any] = {"page_size": min(100, limite - len(paginas))}
+            if filtro:
+                corpo["filter"] = filtro
+            if cursor:
+                corpo["start_cursor"] = cursor
+            resultado = self._chamar("POST", f"/databases/{database_id}/query", corpo)
+            paginas.extend(resultado.get("results", []))
+            if not resultado.get("has_more"):
+                break
+            cursor = resultado.get("next_cursor")
+        return paginas
+
+    def regras(self, somente_ativas: bool = True) -> list[dict[str, Any]]:
+        """Devolve as linhas cruas da base de Regras.
+
+        A conversão para `Regra` fica em `sop.regras`, para o cliente HTTP não
+        precisar saber o que é uma regra.
+        """
+        exigir(self.config, "regras")
+        filtro = {"property": "Ativa", "checkbox": {"equals": True}} if somente_ativas else None
+        return self.consultar_database(self.config.notion_regras_database_id, filtro)
+
+    def anexar_blocos(self, page_id: str, blocos: list[dict[str, Any]]) -> int:
+        """Acrescenta blocos ao fim de uma página, em lotes de 100.
+
+        Só acrescenta. Nada aqui apaga ou reescreve o que já estava na página.
+        """
+        enviados = 0
+        for inicio in range(0, len(blocos), 100):
+            lote = blocos[inicio : inicio + 100]
+            self._chamar("PATCH", f"/blocks/{page_id}/children", {"children": lote})
+            enviados += len(lote)
+        return enviados

@@ -1,0 +1,46 @@
+[
+  {
+    "nome": "Consulta médica pede dinheiro em mãos",
+    "se": "Há uma consulta médica marcada na agenda",
+    "entao": "Separar o valor em dinheiro antes do dia. Se o dinheiro não estiver disponível, gerar a tarefa de pedir para alguém sacar.",
+    "area": "Saúde",
+    "origem": "Agenda",
+    "palavras_chave": "consulta, médico, médica, pediatra, dentista, exame",
+    "antecedencia_dias": 2,
+    "ativa": true,
+    "observacao": "O valor muda de consulta para consulta, então confirme antes de separar."
+  },
+  {
+    "nome": "Atividade na escola pede item",
+    "se": "Há atividade na escola que exige levar algum item",
+    "entao": "Separar o item com antecedência e deixar pronto para o dia.",
+    "area": "Escola",
+    "origem": "Agenda",
+    "palavras_chave": "escola, levar para a escola",
+    "antecedencia_dias": 1,
+    "ativa": true,
+    "observacao": "Cadastre a atividade na agenda com o item no título, no formato: Escola, levar [item]."
+  },
+  {
+    "nome": "Essencial acabando vai para a lista de compras",
+    "se": "Um item essencial da lista de alimentos está acabando",
+    "entao": "Entrar na lista de compras da semana.",
+    "area": "Casa",
+    "origem": "Estoque",
+    "palavras_chave": "acabando, acabou, último, última, sobrou pouco",
+    "antecedencia_dias": 0,
+    "ativa": true,
+    "observacao": "A lista de essenciais fica na página de Casa e Família."
+  },
+  {
+    "nome": "Entrega da faculdade pede bloco de estudo",
+    "se": "Há entrega da faculdade com data marcada",
+    "entao": "Reservar um bloco de estudo antes do prazo.",
+    "area": "Estudos",
+    "origem": "Agenda",
+    "palavras_chave": "entrega, prova, trabalho da faculdade",
+    "antecedencia_dias": 3,
+    "ativa": false,
+    "observacao": "Regra desligada de propósito, serve para mostrar que o motor respeita o campo Ativa."
+  }
+]

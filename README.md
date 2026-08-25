@@ -22,6 +22,7 @@ aqui é reduzir essa fricção a zero.
 - [Autenticação e segurança](#autenticação-e-segurança)
 - [Como executar](#como-executar)
 - [Automação de ponta a ponta](#automação-de-ponta-a-ponta)
+- [O ciclo semanal: regras se-então e ritual de domingo](#o-ciclo-semanal-regras-se-então-e-ritual-de-domingo)
 - [Testes](#testes)
 - [Prints](#prints)
 
@@ -346,6 +347,9 @@ python -m sop worker     # terminal 2: consome a fila
 | `python -m sop processar "texto"` | Fluxo completo (grava de verdade) |
 | `python -m sop escutar` | Long polling do Telegram |
 | `python -m sop worker` | Consome a fila durável |
+| `python -m sop regras` | Lista as regras se-então carregadas |
+| `python -m sop ritual` | Monta o pacote do ritual de domingo |
+| `python -m sop simular` | Ritual de ponta a ponta com dados fictícios, sem rede |
 
 ---
 
@@ -382,13 +386,103 @@ python -m sop demo
 
 ---
 
+## O ciclo semanal: regras se-então e ritual de domingo
+
+A automação da mensagem resolve o minuto. O ciclo semanal resolve a semana.
+
+São duas peças, em `src/sop/regras.py` e `src/sop/ritual.py`:
+
+**Agenda da semana + base de Regras → tarefas derivadas → ritual de domingo**
+
+### O motor de regras
+
+Todo compromisso gera efeito. Uma consulta médica não é só uma consulta: ela
+exige que o dinheiro esteja separado antes. Se o dinheiro não estiver separado,
+alguém precisa sacar, e isso vira outro compromisso. Uma coisa puxa a outra.
+
+O motor lê os eventos da semana, cruza com uma base de regras editável e gera as
+tarefas que nascem desse cruzamento. Uma regra tem esta forma:
+
+| Campo | Para que serve |
+|---|---|
+| `Se` | O gatilho, escrito em uma frase |
+| `Então` | A ação gerada, escrita em uma frase |
+| `Área` | Casa, Escola, Saúde, Estudos, Projetos ou Finanças |
+| `Origem` | `Agenda` cruza com os eventos, `Estoque` com a lista de essenciais |
+| `Palavras-chave` | Termos separados por vírgula que reconhecem o gatilho |
+| `Antecedência em dias` | Quantos dias antes a tarefa vence |
+| `Ativa` | Desliga a regra sem apagá-la |
+| `Observação` | Contexto para quem for executar |
+
+Duas decisões que valem explicação:
+
+- **Cada frase do `Então` vira uma tarefa.** Frases que começam com "Se" são
+  efeitos de segunda ordem: dependem de uma checagem humana antes de existirem.
+  É assim que a falta do dinheiro consegue gerar a tarefa de pedir para sacar,
+  sem que o sistema precise adivinhar se o dinheiro está lá.
+- **Os termos de `Palavras-chave` são alternativas, e um termo com mais de uma
+  palavra é procurado como frase.** Isso permite escrever `escola da nina` sem
+  que todo evento com a palavra `nina` dispare a regra. Na dúvida o motor gera a
+  tarefa a mais, que se desmarca em um clique: esquecer o material da escola
+  custa mais caro do que uma linha sobrando na lista.
+
+A base de regras mora no Notion e é editada por quem usa, sem tocar em código.
+Acrescentar uma regra nova não exige nenhum deploy. Sem a base configurada, o
+motor cai em `exemplos/regras.json` e continua demonstrável.
+
+```bash
+python -m sop regras
+```
+
+### O ritual de domingo
+
+Vinte minutos, uma vez por semana, em duas metades:
+
+1. **Fechar a semana que terminou.** O sistema lista os compromissos que
+   estiveram na agenda e devolve em checkbox. Ele não afirma o que foi feito,
+   porque não tem como saber: quem marca é a pessoa. O que sobra é dividido
+   entre o que volta para a semana seguinte e o que morre ali.
+2. **Abrir a semana que começa.** Os compromissos da semana, os efeitos que eles
+   geram pelo motor de regras, os essenciais que estão acabando, o checklist do
+   que precisa estar pronto e as três prioridades.
+
+O pacote sai pronto nos dois formatos: texto para o Telegram e blocos para o
+Notion, com `to_do` de verdade, não parágrafo.
+
+```bash
+python -m sop ritual                        # imprime o pacote
+python -m sop ritual --domingo 2026-03-08   # em outra data
+python -m sop ritual --publicar --telegram  # anexa no Notion e envia
+```
+
+`--publicar` só acrescenta blocos no fim da página do ritual. Nada é apagado nem
+reescrito.
+
+Para agendar o ritual todo domingo às 19h, sem depender de lembrar:
+
+```cron
+0 19 * * 0 cd /caminho/do/projeto && python -m sop ritual --publicar --telegram
+```
+
+### Ver funcionando sem configurar nada
+
+```bash
+python -m sop simular
+```
+
+Roda o ciclo inteiro com a semana fictícia de `exemplos/semana.json`, incluindo
+uma consulta médica que gera as duas tarefas do efeito borboleta. Nenhuma API é
+chamada.
+
+---
+
 ## Testes
 
 ```bash
 python -m pytest
 ```
 
-**112 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
+**159 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
 substituídas por sessões HTTP falsas e o cliente da Anthropic por um duplo que
 registra os parâmetros recebidos.
 
@@ -401,6 +495,8 @@ registra os parâmetros recebidos.
 | `test_automacao.py` | Fluxo ponta a ponta, falha parcial, fila |
 | `test_integracoes.py` | Os três clientes de API, autorização, renovação de token |
 | `test_seguranca.py` | Varredura de dados sensíveis no repositório |
+| `test_regras.py` | Motor se-então: casamento de gatilho, efeito de segunda ordem, prazos |
+| `test_ritual.py` | Limites das semanas, leitura da agenda, saída para Telegram e Notion |
 
 Alguns testes que valem menção:
 
@@ -412,6 +508,12 @@ Alguns testes que valem menção:
 - `test_estado_persiste_entre_instancias` — a fila sobrevive ao processo.
 - `test_recusa_do_modelo_cai_na_heuristica` — `stop_reason: refusal` não vira
   crash nem resposta vazia.
+- `test_consulta_na_agenda_gera_as_duas_tarefas_do_efeito_borboleta` — o efeito
+  de segunda ordem nasce junto com o direto.
+- `test_fechamento_nao_inventa_o_que_foi_feito` — o sistema pergunta em vez de
+  afirmar o que não tem como saber.
+- `test_coluna_faltando_no_notion_nao_derruba_a_leitura` — a base de regras é
+  editada à mão, e uma coluna renomeada não pode quebrar o domingo de ninguém.
 
 ---
 
@@ -449,7 +551,7 @@ _Print do `python -m sop diagnostico` com as quatro integrações prontas._
 
 <!-- ![Testes](docs/prints/05-testes.png) -->
 
-_Print do `python -m pytest` com os 112 testes verdes._
+_Print do `python -m pytest` com os 159 testes verdes._
 
 ### 6. Painel de acompanhamento
 
@@ -470,7 +572,10 @@ sop-pessoal/
 │   ├── fluxo.md               diagramas Mermaid
 │   ├── seguranca.md           modelo de ameaças e controles
 │   └── prints/                capturas de tela da entrega
-├── exemplos/mensagens.json    12 mensagens fictícias para demonstração
+├── exemplos/
+│   ├── mensagens.json         12 mensagens fictícias para demonstração
+│   ├── regras.json            regras se-então de exemplo
+│   └── semana.json            semana fictícia para o `sop simular`
 ├── scripts/
 │   ├── autorizar_google.py    fluxo OAuth, roda uma vez
 │   ├── verificar_config.py    testa as credenciais contra as APIs
@@ -478,6 +583,8 @@ sop-pessoal/
 ├── src/sop/
 │   ├── orquestradora.py       entende, decide, despacha
 │   ├── automacao.py           fluxo de ponta a ponta
+│   ├── regras.py              motor de regras se-então
+│   ├── ritual.py              fechamento e abertura da semana
 │   ├── fila.py                fila durável em disco
 │   ├── agentes/               carga das definições
 │   ├── integracoes/           telegram, notion, google_calendar, ia
@@ -485,7 +592,7 @@ sop-pessoal/
 │   ├── modelos.py             estruturas de dados
 │   ├── datas.py               datas relativas em português
 │   └── cli.py                 interface de linha de comando
-└── tests/                     112 testes, sem rede
+└── tests/                     159 testes, sem rede
 ```
 
 ---

@@ -212,6 +212,47 @@ O projeto roda em qualquer ambiente com Python 3.10.
 
 ---
 
+## Decisão 10 — o efeito borboleta mora numa base editável, não no código
+
+O sistema não organiza só o minuto em que a mensagem chega, ele precisa organizar
+a semana. E a semana tem uma propriedade que a mensagem isolada não tem: um
+compromisso gera outro. Uma consulta médica exige dinheiro separado antes. Se o
+dinheiro não estiver separado, alguém precisa sacar, e isso vira um segundo
+compromisso. A dona do sistema chamou isso de efeito borboleta.
+
+A tentação era codificar esses encadeamentos. Foi rejeitada por dois motivos.
+Primeiro, eles são pessoais: as regras de uma casa não servem para outra, e não
+existe conjunto certo para embutir. Segundo, e mais importante, eles mudam. Se
+mudar a regra exige um deploy, ela para de ser atualizada e o sistema envelhece
+até virar mentira.
+
+Então a regra virou dado. Cada linha da base de Regras do Notion tem um `Se`, um
+`Então`, uma origem e palavras-chave, e o motor em `regras.py` só cruza os
+eventos da semana com essa base. Acrescentar uma regra é escrever uma frase no
+Notion. O código não sabe o que é consulta médica nem o que é escola.
+
+Duas escolhas dentro do motor merecem registro:
+
+**Cada frase do `Então` vira uma tarefa, e frases começadas com "Se" são efeitos
+de segunda ordem.** Isso resolve o encadeamento sem precisar de um grafo de
+dependências nem de um segundo motor. A tarefa condicional nasce marcada, e a
+checagem que a ativa é humana. O sistema não tem como saber se o dinheiro está
+na carteira, então ele pergunta em vez de fingir que sabe.
+
+**Termos de palavra-chave são alternativas, e termo com mais de uma palavra é
+procurado como frase.** Permite escrever `escola da nina` sem que todo evento com
+`nina` dispare a regra. Onde a precisão é impossível, o erro escolhido é o de
+gerar tarefa a mais: uma linha sobrando se desmarca em um clique, e uma criança
+que chega na escola sem o material pedido não.
+
+O ritual de domingo, em `ritual.py`, é o consumidor desse motor. Ele fecha a
+semana que terminou, abre a que começa e devolve o pacote nos dois formatos que
+importam, texto de Telegram e blocos de Notion. Também aqui vale a regra de não
+inventar: o fechamento lista os compromissos que existiram e deixa a marcação
+para a pessoa, porque o sistema não tem como saber o que foi cumprido.
+
+---
+
 ## O que ficou de fora, e por quê
 
 | Não implementado | Motivo |
@@ -240,3 +281,7 @@ passe em `Automacao(orquestradora, banco=...)`. O protocolo `DestinoBanco` em
 
 **Backend de IA novo:** implemente `classificar(texto, registro, hoje) ->
 Classificacao` com um atributo `origem`. Passe para a orquestradora.
+
+**Regra se-então nova:** escreva uma linha na base de Regras do Notion. Nenhum
+código muda, nenhum deploy acontece. É o único ponto de extensão do projeto que
+não exige nem abrir um editor de texto.

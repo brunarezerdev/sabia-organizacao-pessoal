@@ -1,0 +1,40 @@
+{
+  "_leia_me": "Semana fictícia usada pelo comando `python -m sop simular`. Nada aqui é dado real de ninguém: nomes, horários e itens são inventados só para a demonstração rodar sem rede.",
+  "domingo": "2026-03-08",
+  "semana_que_terminou": [
+    {
+      "summary": "Reunião do grupo do trabalho de faculdade",
+      "start": { "dateTime": "2026-03-03T19:00:00-03:00" },
+      "id": "ficticio-1"
+    },
+    {
+      "summary": "Entrega parcial da disciplina",
+      "start": { "date": "2026-03-06" },
+      "id": "ficticio-2"
+    }
+  ],
+  "semana_que_comeca": [
+    {
+      "summary": "Consulta com a pediatra",
+      "start": { "dateTime": "2026-03-12T14:30:00-03:00" },
+      "description": "Levar a carteirinha de vacinação.",
+      "id": "ficticio-3"
+    },
+    {
+      "summary": "Escola, levar uma garrafa PET para a feira de ciências",
+      "start": { "date": "2026-03-10" },
+      "id": "ficticio-4"
+    },
+    {
+      "summary": "Aula de natação",
+      "start": { "dateTime": "2026-03-11T17:00:00-03:00" },
+      "id": "ficticio-5"
+    }
+  ],
+  "estoque": [
+    { "nome": "Arroz", "situacao": "acabando", "essencial": true },
+    { "nome": "Leite", "situacao": "sobrou pouco", "essencial": true },
+    { "nome": "Feijão", "situacao": "ok", "essencial": true },
+    { "nome": "Chocolate em pó", "situacao": "acabou", "essencial": false }
+  ]
+}
