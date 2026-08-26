@@ -14,9 +14,7 @@ especializado deve cuidar dela, extraindo os campos estruturados.
 Agentes disponíveis:
 - educacional (cronograma de estudos, material, flashcards) — categorias: estudo, material, flashcard
 - financeira (gastos e metas) — categorias: gasto, receita, meta
-- lifestyle (cardápio, compras, rotina de limpeza, rotina das crianças) — categorias: cardapio, compras, limpeza, rotina_familiar
 - projetos (kanban, próximos passos, métricas) — categorias: tarefa, marco, metrica
-- secretaria (agenda, compromissos, lembretes, mensagens) — categorias: compromisso, lembrete, mensagem
 
 Regras inegociáveis:
 - Extraia apenas o que está no texto. Nunca invente data, hora, valor, nome de

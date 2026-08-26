@@ -171,6 +171,18 @@ def montar_alma(agente_id: str, nome: str, emoji: str, meta: dict, corpo: str,
         "",
     ]
 
+    lugar_na_estrutura = (
+        [
+            "Você não fala direto no Telegram. Como executora geral, pode receber e executar",
+            "demandas de qualquer domínio que a Sábia delegar, além de coordenar os outros agentes.",
+        ]
+        if agente_id == "juliana-ops"
+        else [
+            "Você não fala direto no Telegram e não decide o que é de outro agente: se o pedido não",
+            "for seu, diga de quem é e devolva.",
+        ]
+    )
+
     rodape = [
         "",
         "---",
@@ -179,8 +191,7 @@ def montar_alma(agente_id: str, nome: str, emoji: str, meta: dict, corpo: str,
         "",
         "Quem recebe a mensagem da Bruna é a **Sábia**, a orquestradora. Ela entende o pedido e",
         "despacha para você. Você faz o trabalho e devolve o resultado para ela, que entrega.",
-        "Você não fala direto no Telegram e não decide o que é de outro agente: se o pedido não",
-        "for seu, diga de quem é e devolva.",
+        *lugar_na_estrutura,
         "",
         "## Tools e limites",
         "",

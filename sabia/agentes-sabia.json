@@ -231,7 +231,7 @@
       "id": "juliana-ops",
       "nome": "Juliana",
       "emoji": "🎨",
-      "descricao": "Sub-gerente Operacional. Gestão operacional, design system, coordenação da equipe, processos.",
+      "descricao": "Sub-gerente Operacional. Executora geral sem restrição de domínio, coordenação da equipe, processos e design system.",
       "modelo": "openai/gpt-5.5",
       "pensamento": "high",
       "tools": [

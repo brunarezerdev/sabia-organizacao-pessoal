@@ -205,11 +205,13 @@ python -m sop openclaw --verificar  # falha se alguém editou agentes/ sem reger
 | id | Papel | Tools |
 |---|---|---|
 | `main` | triagem e roteamento | `fs.read`, `grep`, `agent.invoke` |
-| `secretaria` | agenda | `fs.read`, `fs.write` |
-| `lifestyle` | casa | `fs.read`, `fs.write` |
 | `financeira` | dinheiro | `fs.read`, `fs.write` |
 | `projetos` | kanban | `fs.read`, `fs.write` |
 | `educacional` | estudos | `fs.read`, `fs.write`, `web.fetch` |
+
+`secretaria` e `lifestyle` permanecem apenas no roteamento Python histórico,
+com `openclaw_ativo: false`; não são instaladas no OpenClaw. Agenda e rotina
+pessoal ou doméstica ficam com a `juliana-ops` na estrutura Sábia.
 
 A regra das tools é dar o menor conjunto que resolve o trabalho. `agent.invoke`
 existe só na orquestradora, porque delegação em especialista abre caminho para

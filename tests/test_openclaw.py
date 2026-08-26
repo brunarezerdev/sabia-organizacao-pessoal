@@ -33,11 +33,9 @@ def declaracao(registro):
 # -- declaração --------------------------------------------------------------
 
 
-def test_declara_a_orquestradora_e_os_cinco_agentes(declaracao):
+def test_declara_a_orquestradora_e_os_tres_agentes_ativos(declaracao):
     assert declaracao.principal.id == "main"
     assert {p.id for p in declaracao.subagentes} == {
-        "secretaria",
-        "lifestyle",
         "financeira",
         "projetos",
         "educacional",
@@ -48,6 +46,13 @@ def test_orquestradora_nao_vira_um_sexto_agente_de_dominio(registro):
     """`_orquestradora.md` mora em agentes/, mas fora do roteamento."""
     assert "main" not in registro
     assert len(registro) == 5
+
+
+def test_agentes_desativados_continuam_no_roteamento_sem_irem_ao_openclaw(registro, declaracao):
+    assert {"secretaria", "lifestyle"} <= set(registro.nomes())
+    declarados = {perfil.id for perfil in declaracao.subagentes}
+    assert "secretaria" not in declarados
+    assert "lifestyle" not in declarados
 
 
 def test_cada_agente_tem_workspace_proprio(declaracao):
@@ -145,7 +150,7 @@ def test_alma_da_orquestradora_resolve_os_marcadores(registro):
     alma = oc.montar_alma(orquestradora, perfil, registro)
     assert "{catalogo}" not in alma and "{hoje}" not in alma
     # O catálogo resolvido lista os agentes de verdade.
-    for nome in registro.nomes():
+    for nome in (agente.nome for agente in registro if agente.openclaw_ativo):
         assert nome in alma
 
 

@@ -39,6 +39,7 @@ class AgenteDef:
     emoji: str = ""
     tools: tuple[str, ...] = ()
     modelo: str = ""
+    openclaw_ativo: bool = True
 
     def aceita(self, categoria: str) -> bool:
         return categoria in self.categorias
@@ -144,6 +145,7 @@ def carregar_agente(caminho: Path) -> AgenteDef:
         emoji=str(dados.get("emoji") or ""),
         tools=lista("tools"),
         modelo=str(dados.get("modelo") or ""),
+        openclaw_ativo=bool(dados.get("openclaw_ativo", True)),
     )
 
 

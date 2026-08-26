@@ -48,16 +48,14 @@ append não destrutivo, valida na escrita e cria o workspace. É o que
 
 ## Os agentes
 
-Seis agentes: a orquestradora, que faz a triagem, e cinco especialistas de
-domínio. A orquestradora não executa trabalho de domínio — ela entende, decide
-e delega. Essa separação é a mesma do desenho original em Python; o OpenClaw
-só passou a ser onde ela roda.
+Quatro agentes desta estrutura permanecem instalados: a orquestradora e três
+especialistas de domínio. As definições de `secretaria` e `lifestyle` continuam
+no roteamento Python histórico, mas têm `openclaw_ativo: false` e não são
+registradas no OpenClaw; suas funções foram absorvidas pela `juliana-ops`.
 
 | id | Nome | Papel | Modelo | Tools |
 |---|---|---|---|---|
 | `main` | Orquestradora 🧭 | Triagem e roteamento | `openai/gpt-5.5` | `fs.read`, `grep`, `agent.invoke` |
-| `secretaria` | Secretária 📅 | Agenda, lembretes, mensagens | `openai/gpt-5.5` | `fs.read`, `fs.write` |
-| `lifestyle` | Lifestyle 🏠 | Cardápio, compras, casa | `openai/gpt-5.5` | `fs.read`, `fs.write` |
 | `financeira` | Financeira 💰 | Gastos e metas | `openai/gpt-5.5` | `fs.read`, `fs.write` |
 | `projetos` | Projetos e Carreira 📋 | Kanban, marcos, métricas | `openai/gpt-5.5` | `fs.read`, `fs.write` |
 | `educacional` | Educacional 🎓 | Estudos, material, flashcards | `openai/gpt-5.5` | `fs.read`, `fs.write`, `web.fetch` |

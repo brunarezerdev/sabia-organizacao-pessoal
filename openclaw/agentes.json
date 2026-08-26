@@ -56,19 +56,6 @@
       "alma": "openclaw/workspaces/financeira/SOUL.md"
     },
     {
-      "id": "lifestyle",
-      "nome": "Lifestyle",
-      "emoji": "🏠",
-      "descricao": "cardápio, compras, rotina de limpeza, rotina das crianças",
-      "modelo": "openai/gpt-5.5",
-      "tools": [
-        "fs.read",
-        "fs.write"
-      ],
-      "workspace": "~/.openclaw/workspace-lifestyle",
-      "alma": "openclaw/workspaces/lifestyle/SOUL.md"
-    },
-    {
       "id": "projetos",
       "nome": "Projetos e Carreira",
       "emoji": "📋",
@@ -80,19 +67,6 @@
       ],
       "workspace": "~/.openclaw/workspace-projetos",
       "alma": "openclaw/workspaces/projetos/SOUL.md"
-    },
-    {
-      "id": "secretaria",
-      "nome": "Secretária",
-      "emoji": "📅",
-      "descricao": "agenda, compromissos, lembretes, mensagens",
-      "modelo": "openai/gpt-5.5",
-      "tools": [
-        "fs.read",
-        "fs.write"
-      ],
-      "workspace": "~/.openclaw/workspace-secretaria",
-      "alma": "openclaw/workspaces/secretaria/SOUL.md"
     }
   ]
 }

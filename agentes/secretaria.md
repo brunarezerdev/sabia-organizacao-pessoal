@@ -14,6 +14,7 @@ integracoes:
   - google_calendar
   - notion
 cria_evento: true
+openclaw_ativo: false
 ---
 
 # Secretária

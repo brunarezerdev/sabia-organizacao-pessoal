@@ -11,9 +11,10 @@ Montada em 26/08/2026.
 `brunarezerdev/aria-infra`, em `.claude/agents/`: nove agentes que a Bruna usa de fato, mais uma
 orquestradora.
 
-**Não é** a wiki de receitas do Notion, e **não é** a estrutura pessoal antiga (educacional,
-financeira, lifestyle, projetos, secretaria). Aquela continua registrada e preservada, declarada
-em `openclaw/agentes.json`. As duas convivem no mesmo OpenClaw sem se misturar.
+**Não é** a wiki de receitas do Notion, e **não é** a estrutura pessoal antiga. Dessa estrutura,
+`educacional`, `financeira` e `projetos` continuam registrados e preservados em
+`openclaw/agentes.json`. `secretaria` e `lifestyle` foram retirados do OpenClaw em 26/08/2026,
+e suas funções passaram para a `juliana-ops`.
 
 ## A orquestradora
 

@@ -14,6 +14,7 @@ categorias:
 integracoes:
   - notion
 cria_evento: false
+openclaw_ativo: false
 ---
 
 # Lifestyle

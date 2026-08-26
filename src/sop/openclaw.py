@@ -167,8 +167,9 @@ def montar_declaracao(
     return Declaracao(
         principal=perfil_de(orquestradora, base, modelo, principal=True),
         subagentes=[
-            perfil_de(registro.obter(nome), base, modelo)  # type: ignore[arg-type]
-            for nome in registro.nomes()
+            perfil_de(agente, base, modelo)
+            for agente in registro
+            if agente.openclaw_ativo
         ],
         base=base,
         modelo=modelo,
@@ -185,6 +186,7 @@ def montar_catalogo(registro: Registro) -> str:
     return "\n".join(
         f"- {agente.nome} ({agente.dominio}) — categorias: {', '.join(agente.categorias)}"
         for agente in registro
+        if agente.openclaw_ativo
     )
 
 
