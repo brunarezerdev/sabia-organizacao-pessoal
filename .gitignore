@@ -77,3 +77,14 @@ Thumbs.db
 .vscode/
 *.swp
 *~
+
+# ---------------------------------------------------------------------------
+# Estrutura Sábia — dados de operação, não de código
+# ---------------------------------------------------------------------------
+# A fila carrega o conteúdo real das mensagens da Bruna e do Wagner. A estrutura
+# de pastas é versionada (pelos .gitkeep), o conteúdo não.
+sabia/fila/entrada/*
+sabia/fila/saida/*
+sabia/fila/processadas/*
+sabia/fila/ledger.jsonl
+!sabia/fila/*/.gitkeep

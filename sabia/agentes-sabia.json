@@ -1,0 +1,332 @@
+{
+  "_leia": "Declaração da estrutura Sábia, não é o openclaw.json. Gerada por `python3 sabia/converter.py` a partir de sabia/agentes-fonte/ e sabia/orquestradora.md. Aplicada no OpenClaw por sabia/registrar.sh. Não edite à mão. Não confundir com openclaw/agentes.json, que é a estrutura pessoal antiga e continua preservada.",
+  "origem": {
+    "repositorio": "brunarezerdev/aria-infra",
+    "caminho": ".claude/agents/",
+    "commit": "3d259f94e9dcfd7ae74eb12a4db2a65dc6ece43a",
+    "data": "2026-08-26"
+  },
+  "provedor": {
+    "provider": "openai",
+    "modelo": "openai/gpt-5.5",
+    "auth": "Codex CLI já autenticado em ~/.codex, pelo plugin nativo do OpenClaw"
+  },
+  "principal": {
+    "id": "main",
+    "nome": "Sábia",
+    "emoji": "🐦",
+    "descricao": "Orquestradora da estrutura de agentes. Recebe pelo Telegram, entende, decide quem faz e devolve a resposta.",
+    "modelo": "openai/gpt-5.5",
+    "pensamento": "high",
+    "tools": [
+      "read",
+      "agents_list",
+      "sessions_spawn",
+      "subagents",
+      "session_status",
+      "ask_user",
+      "memory_search",
+      "memory_get"
+    ],
+    "deny": [],
+    "workspace": "~/.openclaw/workspace",
+    "alma": "sabia/almas/sabia.md"
+  },
+  "subagentes": [
+    {
+      "id": "amanda-crm",
+      "nome": "Amanda",
+      "emoji": "💬",
+      "descricao": "Gerente de Atendimento e Relacionamento da e-Gig. Gestão de contatos, atendimento ao cliente, follow-up e pipeline de eventos/orçamentos. Hoje em armazenamento local, pronta pra plugar num CRM depois.",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "medium",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "exec",
+        "session_status"
+      ],
+      "deny": [],
+      "workspace": "~/.openclaw/workspace-amanda-crm",
+      "alma": "sabia/almas/amanda-crm.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/amanda-crm.md",
+        "modelo": "sonnet",
+        "tools": [
+          "Read",
+          "Write",
+          "Edit",
+          "Bash",
+          "Grep",
+          "Glob"
+        ],
+        "disallowedTools": []
+      }
+    },
+    {
+      "id": "denderson-clone",
+      "nome": "Denderson",
+      "emoji": "🎯",
+      "descricao": "Clone digital do Denderson. Especialista em tráfego pago, Meta Ads, campanhas, criativos, métricas. Subagente interno (não fala com o público).",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "medium",
+      "tools": [
+        "read",
+        "write",
+        "web_fetch",
+        "web_search",
+        "exec",
+        "session_status"
+      ],
+      "deny": [],
+      "workspace": "~/.openclaw/workspace-denderson-clone",
+      "alma": "sabia/almas/denderson-clone.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/denderson-clone.md",
+        "modelo": "sonnet",
+        "tools": [
+          "Read",
+          "Write",
+          "WebFetch",
+          "Bash",
+          "Grep"
+        ],
+        "disallowedTools": []
+      }
+    },
+    {
+      "id": "ethan-projetos",
+      "nome": "Ethan",
+      "emoji": "📋",
+      "descricao": "Gestor de Projetos. Prazos, entregas, roadmap, coordenação de sprints.",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "medium",
+      "tools": [
+        "read",
+        "write",
+        "web_fetch",
+        "web_search",
+        "session_status"
+      ],
+      "deny": [],
+      "workspace": "~/.openclaw/workspace-ethan-projetos",
+      "alma": "sabia/almas/ethan-projetos.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/ethan-projetos.md",
+        "modelo": "sonnet",
+        "tools": [
+          "Read",
+          "Write",
+          "WebFetch",
+          "Grep"
+        ],
+        "disallowedTools": []
+      }
+    },
+    {
+      "id": "jane-academica",
+      "nome": "Jane",
+      "emoji": "🎓",
+      "descricao": "Jane, ghostwriter acadêmica da Bruna. Escreve artigos e partes teóricas com raciocínio visível, em primeira pessoa, cruzando dados para sustentar o argumento. Um projeto por vez.",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "medium",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "web_fetch",
+        "web_search",
+        "session_status"
+      ],
+      "deny": [],
+      "workspace": "~/.openclaw/workspace-jane-academica",
+      "alma": "sabia/almas/jane-academica.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/jane-academica.md",
+        "modelo": "claude-sonnet-5",
+        "tools": [
+          "Read",
+          "Write",
+          "Edit",
+          "Grep",
+          "Glob",
+          "WebFetch"
+        ],
+        "disallowedTools": []
+      }
+    },
+    {
+      "id": "jonathan-copy",
+      "nome": "Jonathan",
+      "emoji": "✍️",
+      "descricao": "Copywriter e Pesquisador. Textos, roteiros, cartas de venda, pesquisa de mercado, conteúdo para Instagram.",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "medium",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "exec",
+        "web_fetch",
+        "web_search",
+        "session_status"
+      ],
+      "deny": [],
+      "workspace": "~/.openclaw/workspace-jonathan-copy",
+      "alma": "sabia/almas/jonathan-copy.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/jonathan-copy.md",
+        "modelo": "sonnet",
+        "tools": [
+          "Read",
+          "Write",
+          "Edit",
+          "Bash",
+          "WebFetch",
+          "Grep",
+          "Glob"
+        ],
+        "disallowedTools": []
+      }
+    },
+    {
+      "id": "jordan-sdr",
+      "nome": "Jordan",
+      "emoji": "🤝",
+      "descricao": "SDR de vendas. Prospecção, qualificação de leads, follow-up, agendamento.",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "medium",
+      "tools": [
+        "read",
+        "write",
+        "web_fetch",
+        "web_search",
+        "session_status"
+      ],
+      "deny": [
+        "exec",
+        "process",
+        "code_execution",
+        "edit",
+        "apply_patch"
+      ],
+      "workspace": "~/.openclaw/workspace-jordan-sdr",
+      "alma": "sabia/almas/jordan-sdr.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/jordan-sdr.md",
+        "modelo": "sonnet",
+        "tools": [
+          "Read",
+          "Write",
+          "WebFetch"
+        ],
+        "disallowedTools": [
+          "Bash",
+          "Edit"
+        ]
+      }
+    },
+    {
+      "id": "juliana-ops",
+      "nome": "Juliana",
+      "emoji": "🎨",
+      "descricao": "Sub-gerente Operacional. Gestão operacional, design system, coordenação da equipe, processos.",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "high",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "exec",
+        "web_fetch",
+        "web_search",
+        "sessions_spawn",
+        "subagents",
+        "agents_list",
+        "session_status"
+      ],
+      "deny": [],
+      "workspace": "~/.openclaw/workspace-juliana-ops",
+      "alma": "sabia/almas/juliana-ops.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/juliana-ops.md",
+        "modelo": "opus",
+        "tools": [
+          "Read",
+          "Write",
+          "Edit",
+          "Bash",
+          "WebFetch",
+          "Grep",
+          "Glob",
+          "Agent"
+        ],
+        "disallowedTools": []
+      }
+    },
+    {
+      "id": "monica-projetos",
+      "nome": "Mônica",
+      "emoji": "🗂️",
+      "descricao": "Mônica, organizadora de decisões dos projetos de produto da Bruna. Captura e registra no vault as decisões tomadas durante o desenvolvimento, com destaque para as escolhas da Bruna e o porquê de cada uma.",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "medium",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "session_status"
+      ],
+      "deny": [],
+      "workspace": "~/.openclaw/workspace-monica-projetos",
+      "alma": "sabia/almas/monica-projetos.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/monica-projetos.md",
+        "modelo": "sonnet",
+        "tools": [
+          "Read",
+          "Write",
+          "Edit",
+          "Grep",
+          "Glob"
+        ],
+        "disallowedTools": []
+      }
+    },
+    {
+      "id": "neo-dev",
+      "nome": "Neo",
+      "emoji": "💻",
+      "descricao": "Desenvolvedor Full-stack. Código, projetos da Música e-Gig, APIs, deploy, debug, features.",
+      "modelo": "openai/gpt-5.5",
+      "pensamento": "high",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "exec",
+        "web_fetch",
+        "web_search",
+        "session_status"
+      ],
+      "deny": [],
+      "workspace": "~/.openclaw/workspace-neo-dev",
+      "alma": "sabia/almas/neo-dev.md",
+      "origem_claude": {
+        "arquivo": ".claude/agents/neo-dev.md",
+        "modelo": "opus",
+        "tools": [
+          "Read",
+          "Write",
+          "Edit",
+          "Bash",
+          "WebFetch",
+          "Grep",
+          "Glob"
+        ],
+        "disallowedTools": []
+      }
+    }
+  ]
+}
