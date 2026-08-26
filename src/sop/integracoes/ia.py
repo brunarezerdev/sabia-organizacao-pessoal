@@ -1,22 +1,29 @@
 """Camada de IA: transforma texto livre em uma classificação estruturada.
 
-Dois backends com a mesma interface:
+Quatro backends com a mesma interface, para que o provedor continue trocável:
 
-- `ClassificadorAnthropic` — usa a Messages API com *structured output*, então
-  a resposta é validada contra um JSON Schema pela própria API. Não há parsing
-  frágil de texto do modelo.
+- `ClassificadorOpenClaw` — despacha para o agente principal rodando dentro do
+  OpenClaw, que é onde o provedor escolhido (`openai`, rota Codex) está
+  autenticado. É o caminho de produção do projeto.
+- `ClassificadorOpenAI` — rota alternativa por API key, para quem preferir
+  chamar a API direto em vez de passar pelo OpenClaw. **Não** é a rota Codex:
+  o Codex CLI autentica por OAuth e não tem API key.
+- `ClassificadorAnthropic` — Messages API com *structured output*, validado
+  contra JSON Schema pela própria API.
 - `ClassificadorHeuristico` — palavras-chave e expressões regulares, sem rede.
   Existe para que o projeto rode, seja demonstrável e seja testável sem
-  nenhuma credencial. É o fallback automático quando não há chave de API.
+  nenhuma credencial. É o fallback automático quando não há nada configurado.
 
 A troca é transparente: `criar_adaptador()` escolhe o backend disponível e o
 resto do sistema não sabe qual está em uso (só o campo `origem` denuncia).
+Trocar de provedor não exige mexer na orquestradora nem nos agentes.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import subprocess
 from datetime import date
 from typing import Any, Protocol
 
@@ -163,79 +170,93 @@ class ClassificadorHeuristico:
 # Backend Anthropic (Messages API com structured output)
 # ---------------------------------------------------------------------------
 
-INSTRUCAO_BASE = """Você é a orquestradora de um sistema operacional pessoal.
+# O prompt da orquestradora mora em `agentes/_orquestradora.md`, o mesmo arquivo
+# que vira o SOUL.md do agente principal no OpenClaw. Escrito uma vez, usado nas
+# duas pontas: se ele mudar, muda para os dois.
+_FALLBACK_INSTRUCAO = """Você é a orquestradora de um sistema operacional pessoal.
 
-Sua função é ler uma mensagem em linguagem natural e decidir qual agente
-especializado deve cuidar dela, extraindo os campos estruturados.
+Leia a mensagem, decida qual agente cuida dela e extraia os campos.
 
 Agentes disponíveis:
 {catalogo}
 
-Regras inegociáveis:
-- Extraia apenas o que está no texto. Nunca invente data, hora, valor, nome de
-  projeto ou disciplina.
-- Datas sempre no formato AAAA-MM-DD; horas sempre HH:MM em 24 horas.
-- Se a mensagem admitir leituras diferentes que mudem o resultado, marque
-  precisa_confirmacao como true e explique a dúvida em observacao.
-- O título deve ser curto, direto e sem preâmbulo.
-- confianca vai de 0 a 1 e reflete o quanto a escolha do agente é evidente.
+Nunca invente data, hora, valor, projeto ou disciplina. Datas em AAAA-MM-DD,
+horas em HH:MM. Em caso de ambiguidade, marque precisa_confirmacao.
 
-Hoje é {hoje}. Use essa data para resolver expressões relativas.
+Hoje é {hoje}.
 """
 
 
-class ClassificadorAnthropic:
-    """Classificação via Messages API, com resposta validada por JSON Schema."""
+def carregar_instrucao_base() -> str:
+    """Lê a alma da orquestradora, com os marcadores ainda por preencher."""
+    from ..agentes import carregar_orquestradora
+
+    orquestradora = carregar_orquestradora()
+    if orquestradora is None or not orquestradora.prompt.strip():
+        return _FALLBACK_INSTRUCAO
+    return orquestradora.prompt
+
+
+INSTRUCAO_BASE = carregar_instrucao_base()
+
+
+def montar_catalogo(registro: Any) -> str:
+    """Descreve os agentes disponíveis para o modelo."""
+    if registro is None:
+        return "- secretaria, lifestyle, financeira, projetos, educacional"
+    return "\n".join(
+        f"- {agente.nome} ({agente.dominio}) — categorias: {', '.join(agente.categorias)}"
+        for agente in registro
+    )
+
+
+def montar_instrucao(registro: Any, hoje: date) -> str:
+    return INSTRUCAO_BASE.replace("{catalogo}", montar_catalogo(registro)).replace(
+        "{hoje}", hoje.isoformat()
+    )
+
+
+def extrair_json(bruto: str) -> dict[str, Any]:
+    """Recupera o objeto JSON de uma saída que pode vir com texto em volta.
+
+    Um agente conversacional às vezes embrulha o JSON em cerca de código ou
+    numa frase de cortesia. Exigir saída limpa quebraria na primeira vez que
+    isso acontecesse, então o parsing tolera a moldura em vez de estourar.
+    """
+    texto = bruto.strip()
+    if not texto:
+        raise ValueError("resposta vazia do modelo")
+
+    cerca = re.search(r"```(?:json)?\s*(.+?)```", texto, re.DOTALL)
+    if cerca:
+        texto = cerca.group(1).strip()
+
+    try:
+        return json.loads(texto)
+    except json.JSONDecodeError:
+        pass
+
+    inicio, fim = texto.find("{"), texto.rfind("}")
+    if inicio == -1 or fim <= inicio:
+        raise ValueError(f"nenhum JSON encontrado na resposta: {bruto[:120]!r}")
+    return json.loads(texto[inicio : fim + 1])
+
+
+class _BaseClassificador:
+    """Parte comum: instrução, catálogo e conversão do JSON em Classificacao."""
 
     origem = "ia"
 
-    def __init__(self, config: Config, cliente: Any | None = None) -> None:
-        self.config = config
-        if cliente is not None:
-            self.cliente = cliente
-        else:
-            import anthropic  # importado só quando o backend é realmente usado
-
-            self.cliente = anthropic.Anthropic(api_key=config.anthropic_api_key)
-        self._fallback = ClassificadorHeuristico()
-
     @staticmethod
     def montar_catalogo(registro: Any) -> str:
-        if registro is None:
-            return "- secretaria, lifestyle, financeira, projetos, educacional"
-        linhas = []
-        for agente in registro:
-            categorias = ", ".join(agente.categorias)
-            linhas.append(f"- {agente.nome} ({agente.dominio}) — categorias: {categorias}")
-        return "\n".join(linhas)
+        return montar_catalogo(registro)
 
     def instrucao(self, registro: Any, hoje: date) -> str:
-        return INSTRUCAO_BASE.format(
-            catalogo=self.montar_catalogo(registro), hoje=hoje.isoformat()
-        )
+        return montar_instrucao(registro, hoje)
 
-    def classificar(self, texto: str, registro: Any = None, hoje: date | None = None) -> Classificacao:
-        hoje = hoje or date.today()
-        resposta = self.cliente.messages.create(
-            model=self.config.anthropic_model,
-            max_tokens=2000,
-            system=self.instrucao(registro, hoje),
-            output_config={
-                "format": {"type": "json_schema", "schema": ESQUEMA_CLASSIFICACAO}
-            },
-            messages=[{"role": "user", "content": texto}],
-        )
-
-        if getattr(resposta, "stop_reason", None) == "refusal":
-            return self._fallback.classificar(texto, registro, hoje)
-
-        bruto = next(
-            (bloco.text for bloco in resposta.content if bloco.type == "text"), ""
-        )
-        dados = json.loads(bruto)
-        return self._para_classificacao(dados, registro, hoje)
-
-    def _para_classificacao(self, dados: dict[str, Any], registro: Any, hoje: date) -> Classificacao:
+    def _para_classificacao(
+        self, dados: dict[str, Any], registro: Any, hoje: date
+    ) -> Classificacao:
         agente = str(dados.get("agente", "")).strip()
         categoria = str(dados.get("categoria", "")).strip()
 
@@ -256,24 +277,214 @@ class ClassificadorAnthropic:
             disciplina=dados.get("disciplina") or None,
             estado=dados.get("estado") or None,
             recorrencia=dados.get("recorrencia") or None,
-            observacao=str(dados.get("observacao", "")),
+            # `str(None)` viraria a string "None" gravada no Notion. O modelo
+            # devolve `null` sempre que não tem observação, então o caso é o
+            # comum, não a exceção.
+            observacao=str(dados.get("observacao") or ""),
             precisa_confirmacao=bool(dados.get("precisa_confirmacao", False)),
             confianca=float(dados.get("confianca", 0.0)),
             origem=self.origem,
         )
 
 
-def criar_adaptador(config: Config, cliente: Any | None = None) -> AdaptadorIA:
-    """Escolhe o backend disponível.
+class ClassificadorAnthropic(_BaseClassificador):
+    """Classificação via Messages API, com resposta validada por JSON Schema."""
 
-    Com chave de API e o pacote `anthropic` instalado, usa a IA. Sem isso, cai
-    no heurístico — o sistema continua funcionando, apenas com menos precisão.
+    origem = "ia"
+
+    def __init__(self, config: Config, cliente: Any | None = None) -> None:
+        self.config = config
+        if cliente is not None:
+            self.cliente = cliente
+        else:
+            import anthropic  # importado só quando o backend é realmente usado
+
+            self.cliente = anthropic.Anthropic(api_key=config.anthropic_api_key)
+        self._fallback = ClassificadorHeuristico()
+
+    def classificar(self, texto: str, registro: Any = None, hoje: date | None = None) -> Classificacao:
+        hoje = hoje or date.today()
+        resposta = self.cliente.messages.create(
+            model=self.config.anthropic_model,
+            max_tokens=2000,
+            system=self.instrucao(registro, hoje),
+            output_config={
+                "format": {"type": "json_schema", "schema": ESQUEMA_CLASSIFICACAO}
+            },
+            messages=[{"role": "user", "content": texto}],
+        )
+
+        if getattr(resposta, "stop_reason", None) == "refusal":
+            return self._fallback.classificar(texto, registro, hoje)
+
+        bruto = next(
+            (bloco.text for bloco in resposta.content if bloco.type == "text"), ""
+        )
+        return self._para_classificacao(extrair_json(bruto), registro, hoje)
+
+
+# ---------------------------------------------------------------------------
+# Backend OpenClaw (o caminho de produção)
+# ---------------------------------------------------------------------------
+
+
+class ClassificadorOpenClaw(_BaseClassificador):
+    """Delega a triagem ao agente principal rodando dentro do OpenClaw.
+
+    O provedor de IA (hoje `openai`, rota Codex) está autenticado no OpenClaw,
+    não aqui. Este backend não conhece chave nenhuma: ele monta a instrução,
+    entrega ao CLI pela entrada padrão e lê o JSON da saída. Trocar o provedor
+    é um `openclaw models set`, sem tocar em uma linha deste arquivo.
+
+    O comando exato vem de `OPENCLAW_COMANDO` porque a invocação não
+    interativa do CLI é um ponto a confirmar na máquina onde ele estiver
+    instalado (ver docs/openclaw.md). Sem essa variável, o backend se declara
+    indisponível e o sistema cai no heurístico em vez de chutar um comando.
+    """
+
+    origem = "openclaw"
+
+    def __init__(
+        self,
+        config: Config,
+        executor: Any | None = None,
+    ) -> None:
+        self.config = config
+        self.comando = config.openclaw_comando_partido()
+        if not self.comando:
+            raise ValueError(
+                "OPENCLAW_COMANDO não definido — sem ele não dá para invocar o CLI."
+            )
+        self._executor = executor or self._rodar
+        self._fallback = ClassificadorHeuristico()
+
+    def _rodar(self, comando: list[str], entrada: str) -> str:
+        try:
+            processo = subprocess.run(
+                comando,
+                input=entrada,
+                capture_output=True,
+                text=True,
+                timeout=self.config.openclaw_timeout,
+                check=False,
+            )
+        except FileNotFoundError as erro:
+            raise RuntimeError(
+                f"CLI do OpenClaw não encontrado ({comando[0]}). "
+                "Rode scripts/openclaw/instalar.sh."
+            ) from erro
+        except subprocess.TimeoutExpired as erro:
+            raise RuntimeError(
+                f"OpenClaw não respondeu em {self.config.openclaw_timeout}s."
+            ) from erro
+
+        if processo.returncode != 0:
+            detalhe = (processo.stderr or processo.stdout or "").strip()[:300]
+            raise RuntimeError(f"OpenClaw saiu com código {processo.returncode}: {detalhe}")
+        return processo.stdout
+
+    def classificar(
+        self, texto: str, registro: Any = None, hoje: date | None = None
+    ) -> Classificacao:
+        hoje = hoje or date.today()
+        entrada = f"{self.instrucao(registro, hoje)}\n\nMensagem:\n{texto}\n"
+        bruto = self._executor(self.comando, entrada)
+        try:
+            dados = extrair_json(bruto)
+        except (ValueError, json.JSONDecodeError):
+            # Uma resposta ilegível não pode custar o registro da pessoa: o
+            # heurístico assume e o item entra marcado com origem heuristica.
+            return self._fallback.classificar(texto, registro, hoje)
+        return self._para_classificacao(dados, registro, hoje)
+
+
+# ---------------------------------------------------------------------------
+# Backend OpenAI por API key (rota alternativa, NÃO é o Codex)
+# ---------------------------------------------------------------------------
+
+
+class ClassificadorOpenAI(_BaseClassificador):
+    """Chama a API da OpenAI direto, com chave.
+
+    Existe para manter o provedor trocável: se um dia a escolha for uma rota
+    com API key em vez do OpenClaw, basta preencher `OPENAI_API_KEY`. Isso
+    **não** substitui nem reproduz a rota Codex, que autentica por OAuth e não
+    aceita chave de API.
+    """
+
+    origem = "openai"
+
+    def __init__(self, config: Config, cliente: Any | None = None) -> None:
+        self.config = config
+        if cliente is not None:
+            self.cliente = cliente
+        else:
+            import openai  # importado só quando o backend é realmente usado
+
+            self.cliente = openai.OpenAI(api_key=config.openai_api_key)
+        self._fallback = ClassificadorHeuristico()
+
+    def classificar(
+        self, texto: str, registro: Any = None, hoje: date | None = None
+    ) -> Classificacao:
+        hoje = hoje or date.today()
+        resposta = self.cliente.chat.completions.create(
+            model=self.config.openai_model,
+            messages=[
+                {"role": "system", "content": self.instrucao(registro, hoje)},
+                {"role": "user", "content": texto},
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "classificacao",
+                    "schema": ESQUEMA_CLASSIFICACAO,
+                    "strict": False,
+                },
+            },
+        )
+        bruto = resposta.choices[0].message.content or ""
+        try:
+            dados = extrair_json(bruto)
+        except (ValueError, json.JSONDecodeError):
+            return self._fallback.classificar(texto, registro, hoje)
+        return self._para_classificacao(dados, registro, hoje)
+
+
+# ---------------------------------------------------------------------------
+# Escolha do backend
+# ---------------------------------------------------------------------------
+
+BACKENDS = ("openclaw", "openai", "anthropic", "heuristica")
+
+
+def criar_adaptador(config: Config, cliente: Any | None = None) -> AdaptadorIA:
+    """Escolhe o backend, respeitando `IA_BACKEND` quando ela está definida.
+
+    Sem escolha explícita, a ordem é a da preferência do projeto: OpenClaw
+    primeiro (é onde o provedor está autenticado), depois as rotas por chave e,
+    por último, o heurístico — que não precisa de nada e sempre funciona.
+
+    Nenhum caminho aqui levanta exceção por falta de credencial. Não conseguir
+    usar IA degrada a precisão; não deve derrubar o sistema.
     """
     if cliente is not None:
         return ClassificadorAnthropic(config, cliente=cliente)
-    if not config.anthropic_api_key:
+
+    escolhido = (config.ia_backend or "").strip().lower()
+    if escolhido == "heuristica":
         return ClassificadorHeuristico()
-    try:
-        return ClassificadorAnthropic(config)
-    except ImportError:
-        return ClassificadorHeuristico()
+
+    tentativas = [escolhido] if escolhido else ["openclaw", "openai", "anthropic"]
+    for backend in tentativas:
+        try:
+            if backend == "openclaw" and config.openclaw_comando:
+                return ClassificadorOpenClaw(config)
+            if backend == "openai" and config.openai_api_key:
+                return ClassificadorOpenAI(config)
+            if backend == "anthropic" and config.anthropic_api_key:
+                return ClassificadorAnthropic(config)
+        except (ImportError, ValueError):
+            continue
+
+    return ClassificadorHeuristico()

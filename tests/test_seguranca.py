@@ -15,7 +15,15 @@ import pytest
 
 RAIZ = Path(__file__).resolve().parents[1]
 
-IGNORAR_DIRS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".fila"}
+IGNORAR_DIRS = {
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".fila",
+    "node_modules",
+}
 # Este arquivo e a varredura contêm os padrões por definição.
 IGNORAR_ARQUIVOS = {"test_seguranca.py", "varredura_seguranca.sh"}
 
@@ -39,6 +47,40 @@ PADROES_PROIBIDOS = {
 
 
 def arquivos_do_repo() -> list[Path]:
+    """Os arquivos que entrariam no versionamento — nem mais, nem menos.
+
+    A varredura em `scripts/varredura_seguranca.sh` já pergunta ao git; este
+    teste passou a fazer o mesmo para não divergir dela. Percorrer a pasta
+    inteira olhava também o que o .gitignore exclui: o `.env` da máquina, que
+    o próprio README manda criar, e as dezenas de milhares de arquivos de
+    `node_modules/`, que são código de terceiros e não passam por review aqui.
+
+    `--others --exclude-standard` mantém no radar o arquivo novo ainda não
+    adicionado: ele ainda não está versionado, mas está a um `git add` de
+    entrar, que é exatamente o momento em que este teste precisa falhar.
+    """
+    resultado = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+        text=True,
+        cwd=RAIZ,
+        check=False,
+    )
+    if resultado.returncode != 0:  # fora de um repositório git
+        return _varrer_pasta()
+
+    caminhos = []
+    for relativo in resultado.stdout.split("\0"):
+        if not relativo or Path(relativo).name in IGNORAR_ARQUIVOS:
+            continue
+        caminho = RAIZ / relativo
+        if caminho.is_file():
+            caminhos.append(caminho)
+    return caminhos
+
+
+def _varrer_pasta() -> list[Path]:
+    """Alternativa quando não há git: percorre a pasta ignorando o conhecido."""
     caminhos: list[Path] = []
     for caminho in RAIZ.rglob("*"):
         if not caminho.is_file():

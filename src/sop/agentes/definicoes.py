@@ -3,6 +3,14 @@
 Cada agente vive em um arquivo Markdown próprio, com um cabeçalho YAML simples
 (parseado aqui sem dependência externa) e o prompt no corpo. Adicionar um
 agente novo é criar um arquivo — não há lista fixa no código.
+
+O mesmo arquivo alimenta as duas pontas: o roteamento em Python e a declaração
+OpenClaw (`src/sop/openclaw.py`), que gera o `SOUL.md` de cada workspace. O
+prompt é escrito uma vez só.
+
+Arquivos que começam com `_` são carregados por nome, mas ficam fora do
+registro de roteamento. É assim que a orquestradora (`_orquestradora.md`) mora
+no mesmo diretório sem virar um sexto agente de domínio.
 """
 
 from __future__ import annotations
@@ -26,6 +34,11 @@ class AgenteDef:
     cria_evento: bool
     prompt: str
     caminho: Path | None = None
+    # Campos que só a camada OpenClaw consome. Ausentes, o agente continua
+    # funcionando no roteamento em Python — a declaração é que fica mais pobre.
+    emoji: str = ""
+    tools: tuple[str, ...] = ()
+    modelo: str = ""
 
     def aceita(self, categoria: str) -> bool:
         return categoria in self.categorias
@@ -114,27 +127,46 @@ def carregar_agente(caminho: Path) -> AgenteDef:
     """Lê um arquivo de agente e devolve sua definição."""
     dados, prompt = _ler_frontmatter(caminho.read_text(encoding="utf-8"))
     nome = str(dados.get("nome") or caminho.stem)
-    categorias = dados.get("categorias") or []
-    integracoes = dados.get("integracoes") or []
+
+    def lista(chave: str) -> tuple[str, ...]:
+        valor = dados.get(chave) or []
+        return tuple(valor) if isinstance(valor, list) else ()
+
     return AgenteDef(
         nome=nome,
         titulo=str(dados.get("titulo") or nome.capitalize()),
         dominio=str(dados.get("dominio") or ""),
-        categorias=tuple(categorias) if isinstance(categorias, list) else (),
-        integracoes=tuple(integracoes) if isinstance(integracoes, list) else (),
+        categorias=lista("categorias"),
+        integracoes=lista("integracoes"),
         cria_evento=bool(dados.get("cria_evento", False)),
         prompt=prompt,
         caminho=caminho,
+        emoji=str(dados.get("emoji") or ""),
+        tools=lista("tools"),
+        modelo=str(dados.get("modelo") or ""),
     )
 
 
 def carregar_registro(diretorio: Path | None = None) -> Registro:
-    """Carrega todos os agentes de um diretório."""
+    """Carrega os agentes de domínio de um diretório.
+
+    Arquivos prefixados com `_` são ignorados aqui de propósito: eles existem
+    para a camada OpenClaw (a orquestradora), não para o roteamento.
+    """
     diretorio = diretorio or DIR_AGENTES
     registro = Registro()
     if not diretorio.is_dir():
         return registro
     for caminho in sorted(diretorio.glob("*.md")):
+        if caminho.name.startswith("_"):
+            continue
         agente = carregar_agente(caminho)
         registro.agentes[agente.nome] = agente
     return registro
+
+
+def carregar_orquestradora(diretorio: Path | None = None) -> AgenteDef | None:
+    """Carrega a definição da orquestradora, o agente principal do OpenClaw."""
+    diretorio = diretorio or DIR_AGENTES
+    caminho = diretorio / "_orquestradora.md"
+    return carregar_agente(caminho) if caminho.is_file() else None

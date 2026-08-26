@@ -4,6 +4,7 @@ Comandos:
 
     python -m sop diagnostico          # o que está configurado e o que falta
     python -m sop agentes              # lista os agentes carregados
+    python -m sop openclaw             # gera a declaração e as almas do OpenClaw
     python -m sop classificar "texto"  # classifica sem gravar nada
     python -m sop processar "texto"    # fluxo completo (grava de verdade)
     python -m sop escutar              # long polling do Telegram
@@ -84,14 +85,65 @@ def cmd_diagnostico(config: Config, _args: argparse.Namespace) -> int:
     registro = carregar_registro()
     print(f"\n  agentes carregados: {len(registro)} ({', '.join(registro.nomes())})")
 
+    # Qual backend de IA responderia agora. Vale mais que listar variáveis:
+    # é o que a pessoa quer saber quando a classificação sai estranha.
+    adaptador = criar_adaptador(config)
+    print(f"  backend de IA:      {adaptador.origem}")
+    if adaptador.origem == "heuristica":
+        print(
+            "                      (palavras-chave, sem rede — configure o\n"
+            "                      OpenClaw para usar o provedor de verdade)"
+        )
+
     if any(diagnostico.values()):
         print(
-            "\nO sistema roda mesmo assim: sem chave de IA usa o classificador\n"
+            "\nO sistema roda mesmo assim: sem IA configurada usa o classificador\n"
             "heurístico local, e sem Notion/Agenda só deixa de gravar.\n"
             "Para configurar: cp .env.example .env e preencha as variáveis."
         )
     else:
         print("\nTudo configurado.")
+    return 0
+
+
+def cmd_openclaw(config: Config, args: argparse.Namespace) -> int:
+    """Gera (ou confere) a declaração OpenClaw a partir de `agentes/`."""
+    from . import openclaw as oc
+
+    saidas = oc.gerar(base=config.openclaw_base, modelo=config.openclaw_modelo)
+
+    if args.verificar:
+        fora = oc.desatualizados(saidas)
+        if fora:
+            print("Declaração OpenClaw desatualizada:\n")
+            for relativo in fora:
+                print(f"  {relativo}")
+            print("\nRode `python -m sop openclaw` para regerar.")
+            return 1
+        print("Declaração OpenClaw em dia com agentes/.")
+        return 0
+
+    alterados = oc.escrever(saidas)
+    declaracao = oc.montar_declaracao(
+        base=config.openclaw_base, modelo=config.openclaw_modelo
+    )
+
+    print(f"OpenClaw {oc.VERSAO_OPENCLAW} — provider {oc.PROVEDOR_PADRAO} (OAuth, sem API key)\n")
+    for perfil in declaracao.todos():
+        papel = "principal" if perfil.principal else "subagente"
+        print(f"  {perfil.id:<12} {perfil.emoji} {perfil.nome:<20} [{papel}]")
+        print(f"  {'':<12} modelo: {perfil.modelo}")
+        print(f"  {'':<12} tools:  {', '.join(perfil.tools) or 'nenhuma'}")
+        print(f"  {'':<12} ws:     {perfil.workspace}\n")
+
+    if alterados:
+        print(f"{len(alterados)} arquivo(s) escrito(s):")
+        for relativo in alterados:
+            print(f"  {relativo}")
+    else:
+        print("Nada a fazer: já estava em dia.")
+
+    print("\nPara aplicar no OpenClaw: bash scripts/openclaw/registrar_agentes.sh")
     return 0
 
 
@@ -333,6 +385,13 @@ def construir_parser() -> argparse.ArgumentParser:
     sub.add_parser("agentes", help="lista os agentes carregados")
     sub.add_parser("demo", help="roda os exemplos fictícios, sem rede")
 
+    p = sub.add_parser("openclaw", help="gera a declaração e as almas do OpenClaw")
+    p.add_argument(
+        "--verificar",
+        action="store_true",
+        help="só confere se a declaração está em dia, sem escrever",
+    )
+
     p = sub.add_parser("classificar", help="classifica um texto sem gravar")
     p.add_argument("texto")
 
@@ -369,6 +428,7 @@ def main(argv: list[str] | None = None) -> int:
     comandos = {
         "diagnostico": cmd_diagnostico,
         "agentes": cmd_agentes,
+        "openclaw": cmd_openclaw,
         "classificar": cmd_classificar,
         "processar": cmd_processar,
         "escutar": cmd_escutar,

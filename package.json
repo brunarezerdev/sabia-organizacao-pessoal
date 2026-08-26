@@ -1,0 +1,9 @@
+{
+  "name": "sop-pessoal-openclaw",
+  "private": true,
+  "description": "Runtime dos agentes. Instalação local no node_modules do projeto, para não depender de root nesta VPS.",
+  "dependencies": {
+    "@notionhq/notion-mcp-server": "^2.5.1",
+    "openclaw": "2026.6.5"
+  }
+}

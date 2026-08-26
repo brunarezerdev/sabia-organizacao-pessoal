@@ -1,0 +1,98 @@
+{
+  "_leia": "Declaração do projeto, não é o openclaw.json. O openclaw.json é escrito pelo próprio CLI (config patch / agents add). Gerado por `python -m sop openclaw` a partir de agentes/*.md; não edite à mão.",
+  "openclaw": {
+    "versao": "2026.6.5",
+    "base": "~/.openclaw",
+    "gateway": {
+      "mode": "local"
+    },
+    "provedor": {
+      "provider": "openai",
+      "modelo": "openai/gpt-5.5",
+      "auth": "oauth-device-code",
+      "observacao": "Rota Codex pelo plugin nativo, autenticada por OAuth contra a assinatura ChatGPT Plus. Não usa API key."
+    }
+  },
+  "principal": {
+    "id": "main",
+    "nome": "Orquestradora",
+    "emoji": "🧭",
+    "descricao": "triagem das mensagens e roteamento para os agentes",
+    "modelo": "openai/gpt-5.5",
+    "tools": [
+      "fs.read",
+      "grep",
+      "agent.invoke"
+    ],
+    "workspace": "~/.openclaw/workspace",
+    "alma": "openclaw/workspaces/main/SOUL.md"
+  },
+  "subagentes": [
+    {
+      "id": "educacional",
+      "nome": "Educacional",
+      "emoji": "🎓",
+      "descricao": "cronograma de estudos, material, flashcards",
+      "modelo": "openai/gpt-5.5",
+      "tools": [
+        "fs.read",
+        "fs.write",
+        "web.fetch"
+      ],
+      "workspace": "~/.openclaw/workspace-educacional",
+      "alma": "openclaw/workspaces/educacional/SOUL.md"
+    },
+    {
+      "id": "financeira",
+      "nome": "Financeira",
+      "emoji": "💰",
+      "descricao": "gastos e metas",
+      "modelo": "openai/gpt-5.5",
+      "tools": [
+        "fs.read",
+        "fs.write"
+      ],
+      "workspace": "~/.openclaw/workspace-financeira",
+      "alma": "openclaw/workspaces/financeira/SOUL.md"
+    },
+    {
+      "id": "lifestyle",
+      "nome": "Lifestyle",
+      "emoji": "🏠",
+      "descricao": "cardápio, compras, rotina de limpeza, rotina das crianças",
+      "modelo": "openai/gpt-5.5",
+      "tools": [
+        "fs.read",
+        "fs.write"
+      ],
+      "workspace": "~/.openclaw/workspace-lifestyle",
+      "alma": "openclaw/workspaces/lifestyle/SOUL.md"
+    },
+    {
+      "id": "projetos",
+      "nome": "Projetos e Carreira",
+      "emoji": "📋",
+      "descricao": "kanban, próximos passos, métricas",
+      "modelo": "openai/gpt-5.5",
+      "tools": [
+        "fs.read",
+        "fs.write"
+      ],
+      "workspace": "~/.openclaw/workspace-projetos",
+      "alma": "openclaw/workspaces/projetos/SOUL.md"
+    },
+    {
+      "id": "secretaria",
+      "nome": "Secretária",
+      "emoji": "📅",
+      "descricao": "agenda, compromissos, lembretes, mensagens",
+      "modelo": "openai/gpt-5.5",
+      "tools": [
+        "fs.read",
+        "fs.write"
+      ],
+      "workspace": "~/.openclaw/workspace-secretaria",
+      "alma": "openclaw/workspaces/secretaria/SOUL.md"
+    }
+  ]
+}

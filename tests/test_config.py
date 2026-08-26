@@ -18,7 +18,9 @@ def test_diagnostico_lista_o_que_falta(config_vazia):
     diagnostico = config_vazia.diagnostico()
     assert "TELEGRAM_BOT_TOKEN" in diagnostico["telegram"]
     assert "NOTION_TOKEN" in diagnostico["notion"]
-    assert "ANTHROPIC_API_KEY" in diagnostico["ia"]
+    # A IA entra pelo OpenClaw, que é onde o provedor está autenticado. As
+    # chaves de API são rotas alternativas, não requisito.
+    assert "OPENCLAW_COMANDO" in diagnostico["openclaw"]
 
 
 def test_pronta_reflete_as_credenciais(config_vazia, config_falsa):

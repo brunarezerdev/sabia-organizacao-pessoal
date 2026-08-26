@@ -10,6 +10,7 @@ Regras deste módulo:
 from __future__ import annotations
 
 import os
+import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -51,6 +52,22 @@ class Config:
     google_token_path: str = ""
     google_calendar_id: str = "primary"
 
+    # -- camada de IA --------------------------------------------------------
+    # `ia_backend` força um backend; vazio deixa `criar_adaptador` escolher.
+    ia_backend: str = ""
+
+    # OpenClaw: onde o provedor de IA está autenticado. O projeto não guarda
+    # credencial do provedor — a rota Codex é OAuth, feita pelo próprio CLI.
+    openclaw_base: str = "~/.openclaw"
+    openclaw_agente: str = "main"
+    openclaw_modelo: str = "openai/gpt-5.5"
+    openclaw_comando: str = ""
+    openclaw_timeout: int = 120
+
+    # Rota alternativa por API key. NÃO é a rota Codex.
+    openai_api_key: str = ""
+    openai_model: str = "gpt-5.5"
+
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-opus-5"
 
@@ -64,7 +81,7 @@ class Config:
             "notion": ("NOTION_TOKEN", "NOTION_DATABASE_ID"),
             "regras": ("NOTION_TOKEN", "NOTION_REGRAS_DATABASE_ID"),
             "google_calendar": ("GOOGLE_TOKEN_PATH",),
-            "ia": ("ANTHROPIC_API_KEY",),
+            "openclaw": ("OPENCLAW_COMANDO",),
         },
         repr=False,
         compare=False,
@@ -89,11 +106,32 @@ class Config:
             google_credentials_path=ler("GOOGLE_CREDENTIALS_PATH"),
             google_token_path=ler("GOOGLE_TOKEN_PATH"),
             google_calendar_id=ler("GOOGLE_CALENDAR_ID", "primary"),
+            ia_backend=ler("IA_BACKEND"),
+            openclaw_base=ler("OPENCLAW_BASE", "~/.openclaw"),
+            openclaw_agente=ler("OPENCLAW_AGENTE", "main"),
+            openclaw_modelo=ler("OPENCLAW_MODELO", "openai/gpt-5.5"),
+            openclaw_comando=ler("OPENCLAW_COMANDO"),
+            openclaw_timeout=int(ler("OPENCLAW_TIMEOUT", "120") or 120),
+            openai_api_key=ler("OPENAI_API_KEY"),
+            openai_model=ler("OPENAI_MODEL", "gpt-5.5"),
             anthropic_api_key=ler("ANTHROPIC_API_KEY"),
             anthropic_model=ler("ANTHROPIC_MODEL", "claude-opus-5"),
             timezone=ler("TIMEZONE", "America/Sao_Paulo"),
             fila_dir=ler("FILA_DIR", ".fila"),
         )
+
+    # -- OpenClaw ------------------------------------------------------------
+
+    def openclaw_comando_partido(self) -> list[str]:
+        """Quebra `OPENCLAW_COMANDO` em argv, respeitando aspas.
+
+        A variável é uma linha de comando escrita por quem instalou, então o
+        `{agente}` é substituído aqui pelo id do agente principal.
+        """
+        if not self.openclaw_comando.strip():
+            return []
+        bruto = self.openclaw_comando.replace("{agente}", self.openclaw_agente)
+        return shlex.split(bruto)
 
     # -- diagnóstico ---------------------------------------------------------
 
@@ -107,6 +145,8 @@ class Config:
             "NOTION_RITUAL_PAGE_ID": self.notion_ritual_page_id,
             "GOOGLE_CREDENTIALS_PATH": self.google_credentials_path,
             "GOOGLE_TOKEN_PATH": self.google_token_path,
+            "OPENCLAW_COMANDO": self.openclaw_comando,
+            "OPENAI_API_KEY": self.openai_api_key,
             "ANTHROPIC_API_KEY": self.anthropic_api_key,
         }
         return mapa.get(variavel, "")

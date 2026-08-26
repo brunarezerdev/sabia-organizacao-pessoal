@@ -59,6 +59,16 @@ htmlcov/
 .ruff_cache/
 
 # ---------------------------------------------------------------------------
+# Node — o runtime dos agentes é instalado aqui dentro
+# ---------------------------------------------------------------------------
+# O OpenClaw entra por `npm install` local, na pasta do projeto, para não
+# precisar de root nesta máquina. São ~85 MB de código de terceiros: fica de
+# fora do versionamento. O package-lock.json versionado é o que reproduz a
+# instalação, com `npm ci`.
+node_modules/
+npm-debug.log*
+
+# ---------------------------------------------------------------------------
 # Sistema operacional / editores
 # ---------------------------------------------------------------------------
 .DS_Store

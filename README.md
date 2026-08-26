@@ -20,6 +20,7 @@ aqui é reduzir essa fricção a zero.
 - [Arquitetura e fluxo de integração](#arquitetura-e-fluxo-de-integração)
 - [Os agentes](#os-agentes)
 - [Autenticação e segurança](#autenticação-e-segurança)
+- [Instalar e rodar o OpenClaw](#instalar-e-rodar-o-openclaw)
 - [Como executar](#como-executar)
 - [Automação de ponta a ponta](#automação-de-ponta-a-ponta)
 - [O ciclo semanal: regras se-então e ritual de domingo](#o-ciclo-semanal-regras-se-então-e-ritual-de-domingo)
@@ -72,7 +73,7 @@ O projeto integra **quatro APIs externas**, todas com autenticação.
 | **Telegram Bot API** | Captura de mensagens | Token de bot | É onde a pessoa já está. Um app próprio exigiria instalação e login; o Telegram custa zero fricção e tem long polling gratuito. |
 | **Notion API** | Banco de dados no-code | Token de integração (Bearer) | Requisito de banco no-code. Diferente de um Postgres, a pessoa consegue abrir, filtrar e corrigir os registros sem SQL — o que importa quando o dono do sistema não é programador. |
 | **Google Calendar API v3** | Leitura e escrita de eventos | OAuth 2.0 com refresh token | A agenda que a pessoa realmente usa. Escrever num calendário próprio seria criar mais um lugar para conferir. |
-| **Anthropic Messages API** | Classificação da mensagem | Chave de API | Faz a triagem com *structured output*: a resposta é validada contra um JSON Schema pela própria API, então não há parsing frágil de texto do modelo. |
+| **OpenAI, rota Codex, via OpenClaw** | Classificação da mensagem e execução dos agentes | OAuth 2.0 por device-code, sobre a assinatura ChatGPT Plus | Faz a triagem e roda os agentes. A autenticação não usa chave: o login é feito uma vez pelo CLI e consome a cota da assinatura. |
 
 ### Modos de autenticação
 
@@ -80,13 +81,23 @@ As quatro APIs usam mecanismos diferentes de propósito — o projeto exercita o
 espectro completo:
 
 - **Token no caminho da URL** (Telegram)
-- **Bearer token em header** (Notion, Anthropic)
+- **Bearer token em header** (Notion)
 - **OAuth 2.0 com fluxo de consentimento e renovação de token** (Google)
+- **OAuth 2.0 por device-code, sem chave de API** (OpenAI, rota Codex)
 
-O Google é o mais interessante: o fluxo interativo roda uma única vez
+O Google e o OpenAI são os mais interessantes, e por motivos diferentes.
+
+No Google, o fluxo interativo roda uma única vez
 (`scripts/autorizar_google.py`), grava um refresh token, e daí em diante o
 cliente troca esse refresh por um access token de curta duração a cada sessão,
 renovando sozinho quando expira.
+
+No OpenAI, o fluxo é **device-code**: a máquina que precisa de acesso não tem
+navegador, então ela imprime uma URL e um código curto, e a autorização
+acontece em outro dispositivo já logado. A máquina fica consultando até o
+consentimento chegar. É o desenho pensado para servidor sem interface, e é o
+motivo de **não existir API key nessa rota** — a credencial é a assinatura da
+pessoa, não um segredo copiável. Detalhes em [`docs/openclaw.md`](docs/openclaw.md).
 
 ---
 
@@ -98,12 +109,13 @@ renovando sozinho quando expira.
    └──────┬──────┘
           │  Mensagem (id, texto, autor)
           ▼
-   ┌──────────────────┐        ┌──────────────────┐
-   │  ORQUESTRADORA   │◄──────►│  Camada de IA    │
-   │                  │        │  (classificação) │
-   │  entende         │        └──────────────────┘
-   │  decide          │
-   │  despacha        │        ┌──────────────────┐
+   ┌──────────────────┐        ┌────────────────────────────┐
+   │  ORQUESTRADORA   │◄──────►│  OpenClaw                  │
+   │                  │        │  provider openai (Codex)   │
+   │  entende         │        │  main + 5 subagentes,      │
+   │  decide          │        │  um workspace cada         │
+   │  despacha        │        └────────────────────────────┘
+   │                  │        ┌──────────────────┐
    │                  │◄──────►│  Fila durável    │
    └────────┬─────────┘        │  (em disco)      │
             │                  └──────────────────┘
@@ -162,15 +174,49 @@ agente, senão o roteamento seria ambíguo (há um teste que garante isso).
 
 | Agente | Domínio | Categorias | Cria evento? |
 |---|---|---|---|
-| **Secretária** | agenda, compromissos, lembretes, mensagens | `compromisso`, `lembrete`, `mensagem` | sim |
-| **Lifestyle** | cardápio, compras, limpeza, rotina das crianças | `cardapio`, `compras`, `limpeza`, `rotina_familiar` | não |
-| **Financeira** | gastos e metas | `gasto`, `receita`, `meta` | não |
-| **Projetos e Carreira** | kanban, próximos passos, métricas | `tarefa`, `marco`, `metrica` | sim |
-| **Educacional** | cronograma de estudos, material, flashcards | `estudo`, `material`, `flashcard` | sim |
+| **Secretária** 📅 | agenda, compromissos, lembretes, mensagens | `compromisso`, `lembrete`, `mensagem` | sim |
+| **Lifestyle** 🏠 | cardápio, compras, limpeza, rotina das crianças | `cardapio`, `compras`, `limpeza`, `rotina_familiar` | não |
+| **Financeira** 💰 | gastos e metas | `gasto`, `receita`, `meta` | não |
+| **Projetos e Carreira** 📋 | kanban, próximos passos, métricas | `tarefa`, `marco`, `metrica` | sim |
+| **Educacional** 🎓 | cronograma de estudos, material, flashcards | `estudo`, `material`, `flashcard` | sim |
+
+A orquestradora 🧭 é o sexto agente e mora em `agentes/_orquestradora.md`. O
+prefixo `_` a mantém fora do roteamento: ela decide para quem vai a mensagem,
+não recebe categoria nenhuma.
 
 ```bash
-python -m sop agentes    # lista os agentes carregados e seus domínios
+python -m sop agentes    # lista os agentes de domínio e seus domínios
 ```
+
+### Como eles rodam: OpenClaw
+
+Os agentes são declarados e executados no [OpenClaw](https://docs.openclaw.ai),
+com **um workspace por agente, tools restritas por agente e modelo por agente**.
+
+O mesmo arquivo em `agentes/` alimenta as duas pontas: o roteamento em Python e
+a alma (`SOUL.md`) que o agente lê ao subir dentro do OpenClaw. O prompt é
+escrito uma vez.
+
+```bash
+python -m sop openclaw              # gera openclaw/agentes.json e as almas
+python -m sop openclaw --verificar  # falha se alguém editou agentes/ sem regerar
+```
+
+| id | Papel | Tools |
+|---|---|---|
+| `main` | triagem e roteamento | `fs.read`, `grep`, `agent.invoke` |
+| `secretaria` | agenda | `fs.read`, `fs.write` |
+| `lifestyle` | casa | `fs.read`, `fs.write` |
+| `financeira` | dinheiro | `fs.read`, `fs.write` |
+| `projetos` | kanban | `fs.read`, `fs.write` |
+| `educacional` | estudos | `fs.read`, `fs.write`, `web.fetch` |
+
+A regra das tools é dar o menor conjunto que resolve o trabalho. `agent.invoke`
+existe só na orquestradora, porque delegação em especialista abre caminho para
+loop infinito; `shell.exec` não existe em ninguém, porque nenhum agente deste
+sistema precisa executar comando. As duas regras têm teste.
+
+Detalhes, decisões e pontos em aberto: [`docs/openclaw.md`](docs/openclaw.md).
 
 ---
 
@@ -218,11 +264,141 @@ script manual.
 
 ---
 
+## Instalar e rodar o OpenClaw
+
+Esta seção é o passo a passo completo para quem nunca viu o projeto. Se você só
+quer ver o sistema funcionando sem instalar nada, pule para
+[Como executar](#como-executar): o projeto sobe sem o OpenClaw e sem nenhuma
+credencial.
+
+### O que é preciso
+
+- Ubuntu 22+ / Debian (root) ou macOS 13+ (usuário normal)
+- Node 22.19 ou superior — o script instala se faltar
+- Uma assinatura **ChatGPT Plus** ativa, para autorizar a rota Codex
+- Um bot do Telegram criado no `@BotFather`
+
+### Se o OpenClaw não estiver instalado
+
+É o caso normal em máquina nova. Confira e instale:
+
+```bash
+openclaw --version || bash scripts/openclaw/instalar.sh
+```
+
+O script instala Node 22 via nvm (se preciso), instala `openclaw@2026.6.5` e
+cria `~/.openclaw` com permissão `700`. No Ubuntu ele precisa de root, porque
+instala pacotes de sistema e cria os symlinks que o systemd enxerga:
+
+```bash
+sudo bash scripts/openclaw/instalar.sh
+```
+
+> A versão é fixada de propósito. O repositório de referência registra que
+> `openclaw@latest` quebra o polling do Telegram. Não troque sem testar.
+
+**Se você não quiser ou não puder instalar o OpenClaw**, nada aqui é
+bloqueante: sem ele, `IA_BACKEND` cai no classificador heurístico local e o
+sistema continua classificando, gravando no Notion e criando evento na agenda.
+O que muda é a precisão da triagem. `python -m sop diagnostico` mostra qual
+backend está respondendo.
+
+### 1. Autenticar o provedor de IA
+
+```bash
+bash scripts/openclaw/configurar_provedor_openai.sh
+```
+
+O script imprime uma URL (`https://auth.openai.com/codex/device`) e um código
+curto. Abra a URL no navegador de um computador **já logado no ChatGPT Plus**,
+digite o código e autorize. O terminal detecta sozinho e imprime
+`OpenAI device code complete`. Você não cola nada de volta.
+
+> **Não procure por uma API key do Codex.** Ela não existe. A rota Codex
+> autentica só por OAuth, contra a sua assinatura. A variável `OPENAI_API_KEY`
+> do `.env.example` serve a outra coisa: a rota alternativa por API, opcional.
+
+Ao final, o script define `gateway.mode local` (sem isso o gateway nem sobe) e
+`openai/gpt-5.5` como modelo primário.
+
+### 2. Configurar o canal do Telegram
+
+```bash
+TG_BOT_TOKEN="cole-o-token-do-botfather" \
+TG_USER_ID="seu-id-numerico" \
+  bash scripts/openclaw/configurar_telegram.sh
+```
+
+Para descobrir o seu id: mande qualquer mensagem para o bot e abra
+`https://api.telegram.org/bot<SEU_TOKEN>/getUpdates`; o número está em
+`message.from.id`.
+
+O script usa `openclaw config patch`, que valida na escrita, e configura
+`dmPolicy: allowlist` com o seu id — só você fala com o bot. O arquivo
+temporário que carrega o token é apagado logo depois.
+
+### 3. Gerar e registrar os agentes
+
+```bash
+python -m sop openclaw                      # gera a declaração e as almas
+bash scripts/openclaw/registrar_agentes.sh  # registra no OpenClaw
+```
+
+O segundo script lê `openclaw/agentes.json` e, para cada agente, chama
+`openclaw agents add` (append não destrutivo e idempotente — pode rodar de
+novo), define nome e emoji com `agents set-identity` e copia a alma para o
+`SOUL.md` do workspace dele.
+
+### 4. Subir o gateway como serviço
+
+```bash
+sudo cp systemd/openclaw-gateway.service /etc/systemd/system/
+sudo sed -i "s|__OPENCLAW_BIN__|$(command -v openclaw)|" \
+    /etc/systemd/system/openclaw-gateway.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now openclaw-gateway
+systemctl status openclaw-gateway
+```
+
+O caminho do binário é substituído porque o Node instalado via nvm não está no
+`PATH` do systemd.
+
+### 5. Conferir
+
+```bash
+openclaw config validate     # deve dizer "Config valid"
+openclaw agents list         # main + os 5 subagentes
+openclaw models status --probe
+openclaw doctor
+python -m sop diagnostico    # mostra qual backend de IA está ativo
+```
+
+E, no Telegram, mande `/start` para o seu bot.
+
+### Ponto a confirmar antes de usar em produção
+
+O backend `openclaw` da camada de IA precisa de `OPENCLAW_COMANDO` no `.env`:
+a linha de comando que invoca o agente principal de forma não interativa. Essa
+invocação **não foi verificada** e por isso não há um padrão chutado no código
+— enquanto a variável estiver vazia, o sistema usa o heurístico.
+
+Confira na sua máquina com `openclaw agents --help` e preencha:
+
+```bash
+OPENCLAW_COMANDO=openclaw agents run {agente} --non-interactive
+```
+
+Este e os outros pontos em aberto estão listados em
+[`docs/openclaw.md`](docs/openclaw.md#pontos-a-confirmar).
+
+---
+
 ## Como executar
 
 ### Requisitos
 
-Python 3.10 ou superior.
+Python 3.10 ou superior. O OpenClaw é opcional para rodar e obrigatório só para
+usar o provedor de IA de verdade — ver a seção acima.
 
 ### 1. Instalar
 

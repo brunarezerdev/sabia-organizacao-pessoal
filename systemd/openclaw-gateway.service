@@ -1,0 +1,42 @@
+# Serviço do gateway do OpenClaw.
+#
+#   sudo cp systemd/openclaw-gateway.service /etc/systemd/system/
+#   sudo sed -i "s|__OPENCLAW_BIN__|$(command -v openclaw)|" \
+#       /etc/systemd/system/openclaw-gateway.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now openclaw-gateway
+#   systemctl status openclaw-gateway
+#
+# O caminho do binário é substituído porque o Node instalado via nvm não está
+# no PATH do systemd. Se o gateway morrer com exit 78, falta `gateway.mode`:
+# rode `openclaw config set gateway.mode local`.
+#
+# Adaptado de systemd/openclaw-gateway.service do repositório de referência
+# (MIT) — crédito em README.md.
+
+[Unit]
+Description=OpenClaw Gateway - Sistema Operacional Pessoal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw
+# O `-` faz o systemd seguir mesmo se o arquivo não existir.
+EnvironmentFile=-/root/.openclaw/.env
+ExecStart=__OPENCLAW_BIN__ gateway run --force
+Restart=always
+RestartSec=10
+TimeoutStopSec=15
+
+ProtectSystem=full
+ProtectHome=false
+NoNewPrivileges=true
+PrivateTmp=true
+
+LimitNOFILE=65536
+MemoryHigh=3G
+MemoryMax=4G
+
+[Install]
+WantedBy=multi-user.target

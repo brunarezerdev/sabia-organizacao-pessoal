@@ -15,7 +15,12 @@ ACHADOS=0
 # Só arquivos versionados. Os dois arquivos que DEFINEM os padrões sensíveis
 # (este script e o teste de segurança) ficam de fora — senão a varredura
 # encontraria as próprias regras e falharia sempre.
-EXCLUIR='^(scripts/varredura_seguranca\.sh|tests/test_seguranca\.py)$'
+#
+# O package-lock.json também fica de fora, pela mesma razão que node_modules:
+# é metadado gerado pelo npm, não código que passa por review aqui. Além
+# disso, a versão semver de um pacote ("ip-address": "10.2.0") casa com o
+# padrão de IP privado e produzia falso positivo em série.
+EXCLUIR='^(scripts/varredura_seguranca\.sh|tests/test_seguranca\.py|package-lock\.json)$'
 ARQUIVOS=$(git ls-files 2>/dev/null | grep -vE "$EXCLUIR" \
   || find . -type f \
        -not -path './.git/*' -not -path './.venv/*' -not -path './venv/*' \
