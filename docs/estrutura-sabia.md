@@ -77,8 +77,10 @@ O Claude Code e o OpenClaw nomeiam as ferramentas de forma diferente. O mapa est
 - `Grep` e `Glob` não existem no OpenClaw. Busca lá é `read` e, quando precisa varrer, `exec`.
   Quem tinha Grep/Glob recebeu `read`; quem tinha `Bash` já recebeu `exec` e segue conseguindo
   varrer.
-- `Agent` (invocar outro subagente) virou o trio `sessions_spawn`, `subagents`, `agents_list`.
-  Só a Juliana tem, igual ao original.
+- `Agent` (invocar outro subagente) virou `sessions_spawn`, `sessions_yield`, `subagents` e
+  `agents_list`. Só a Juliana tem, igual ao original. O `sessions_yield` entra junto porque sem
+  ele o agente despacha um filho mas não consegue devolver o turno enquanto espera, e fica preso
+  até o filho terminar.
 
 O `jordan-sdr` tinha `disallowedTools: [Bash, Edit]`. Isso virou `tools.deny` com os aliases que
 dariam o mesmo poder por outro nome: `exec`, `process`, `code_execution`, `edit`, `apply_patch`.

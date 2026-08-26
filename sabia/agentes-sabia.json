@@ -242,6 +242,7 @@
         "web_fetch",
         "web_search",
         "sessions_spawn",
+        "sessions_yield",
         "subagents",
         "agents_list",
         "session_status"

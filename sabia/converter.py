@@ -74,7 +74,10 @@ TOOLS = {
     "Grep": ["read"],
     "Glob": ["read"],
     "WebFetch": ["web_fetch", "web_search"],
-    "Agent": ["sessions_spawn", "subagents", "agents_list"],
+    # `sessions_yield` entra junto: sem ele o agente consegue despachar um filho mas não consegue
+    # devolver o turno enquanto espera, e fica preso até o filho terminar. Quem delega precisa dos
+    # dois lados.
+    "Agent": ["sessions_spawn", "sessions_yield", "subagents", "agents_list"],
 }
 
 # Todo agente precisa saber o estado da própria sessão. É o mínimo do perfil `minimal`.
