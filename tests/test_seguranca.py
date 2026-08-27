@@ -45,6 +45,24 @@ PADROES_PROIBIDOS = {
     "URL de banco com senha": r"(postgres|postgresql|mysql|mongodb)://[^ \"']*:[^ \"']*@",
 }
 
+# Exceções por padrão, não por arquivo inteiro: um arquivo dispensado de UM
+# padrão continua varrido por todos os outros.
+#
+# `sabia/` e `docs/estrutura-sabia.md` descrevem a instalação real desta
+# operação numa VPS — quais caminhos o gateway lê, onde ficam a fila e as almas
+# dos agentes. Esses caminhos SÃO o conteúdo: trocá-los por placeholder deixaria
+# a documentação de implantação errada. O que a regra protege de verdade é o
+# código entregue (`src/`, `scripts/`, `tests/`, `agentes/`), que segue sem
+# nenhum caminho de máquina e continua sendo varrido normalmente.
+EXCECOES = {
+    "caminho absoluto de host": ("sabia/", "docs/estrutura-sabia.md"),
+}
+
+
+def _dispensado(caminho: Path, rotulo: str) -> bool:
+    relativo = caminho.relative_to(RAIZ).as_posix()
+    return any(relativo.startswith(p) for p in EXCECOES.get(rotulo, ()))
+
 
 def arquivos_do_repo() -> list[Path]:
     """Os arquivos que entrariam no versionamento — nem mais, nem menos.
@@ -106,9 +124,22 @@ def test_nenhum_dado_sensivel_no_repo(rotulo, padrao):
     ocorrencias = [
         f"{caminho.relative_to(RAIZ)}: {regex.search(ler(caminho)).group(0)[:40]}"
         for caminho in arquivos_do_repo()
-        if regex.search(ler(caminho))
+        if not _dispensado(caminho, rotulo) and regex.search(ler(caminho))
     ]
     assert not ocorrencias, f"{rotulo} encontrado em: {ocorrencias}"
+
+
+def test_as_excecoes_valem_so_onde_foram_escritas():
+    """A dispensa é por padrão e por caminho — nunca um arquivo livre de tudo.
+
+    Sem esta trava, alargar uma exceção deixaria de ser uma decisão visível.
+    """
+    for rotulo in EXCECOES:
+        assert rotulo in PADROES_PROIBIDOS, f"exceção órfã: {rotulo}"
+
+    codigo = RAIZ / "src" / "sop" / "integracoes" / "google_calendar.py"
+    for rotulo in PADROES_PROIBIDOS:
+        assert not _dispensado(codigo, rotulo), "código entregue não tem dispensa"
 
 
 def test_env_example_tem_todas_as_variaveis_vazias():

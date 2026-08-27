@@ -33,7 +33,9 @@ configuração do motor de regras se-então e é editada à mão por quem usa:
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -93,7 +95,13 @@ class ClienteNotion:
             "Categoria": {"select": {"name": item.categoria}},
         }
         if item.data:
-            inicio = f"{item.data}T{item.hora}:00" if item.hora else item.data
+            if item.hora:
+                local = datetime.fromisoformat(
+                    f"{item.data}T{item.hora}:00"
+                ).replace(tzinfo=ZoneInfo(self.config.timezone))
+                inicio = local.isoformat()
+            else:
+                inicio = item.data
             props["Data"] = {"date": {"start": inicio}}
         if item.observacao:
             props["Observacao"] = self._texto(item.observacao)

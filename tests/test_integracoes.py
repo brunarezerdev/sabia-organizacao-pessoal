@@ -8,19 +8,30 @@ from __future__ import annotations
 import json
 
 import pytest
+import requests
 
 from sop.config import Config, ConfiguracaoAusente
-from sop.integracoes.google_calendar import ClienteGoogleCalendar
+from sop.integracoes.google_calendar import (
+    ClienteGoogleCalendar,
+    ConflitoDeAgenda,
+    ErroCredencialGoogle,
+    ErroGoogleCalendar,
+    ErroIndisponivelGoogle,
+    ErroLimiteGoogle,
+)
 from sop.integracoes.notion import ClienteNotion
 from sop.integracoes.telegram import ClienteTelegram
 
 
 class RespostaFalsa:
-    def __init__(self, corpo: dict, status: int = 200) -> None:
+    def __init__(
+        self, corpo: dict, status: int = 200, headers: dict | None = None
+    ) -> None:
         self._corpo = corpo
         self.status_code = status
         self.text = json.dumps(corpo)
         self.content = self.text.encode()
+        self.headers = headers or {}
 
     def json(self) -> dict:
         return self._corpo
@@ -143,7 +154,7 @@ def test_notion_mapeia_item_para_propriedades(config_falsa, item):
     assert props["Titulo"]["title"][0]["text"]["content"] == "Reunião com o time"
     assert props["Agente"]["select"]["name"] == "secretaria"
     assert props["Categoria"]["select"]["name"] == "compromisso"
-    assert props["Data"]["date"]["start"] == "2026-03-12T14:00:00"
+    assert props["Data"]["date"]["start"] == "2026-03-12T14:00:00-03:00"
     assert "duracao_minutos" in props["Detalhes"]["rich_text"][0]["text"]["content"]
 
 
@@ -177,67 +188,129 @@ def test_notion_erro_traz_a_mensagem_da_api(config_falsa, item):
 # -- Google Agenda -----------------------------------------------------------
 
 
+class AuthFalsa:
+    """Autenticação já resolvida: isola o transporte da obtenção do token."""
+
+    descricao = "falsa"
+
+    def __init__(self, valor: str = "token-temporario") -> None:
+        self.valor = valor
+
+    def token(self) -> str:
+        return self.valor
+
+
+def _livre() -> RespostaFalsa:
+    """Resposta de freeBusy sem nenhuma faixa ocupada."""
+    return RespostaFalsa({"calendars": {"primary": {"busy": []}}})
+
+
+def _agenda(config, *respostas: RespostaFalsa):
+    """Cliente com sessão programada, autenticação falsa e sem espera real."""
+    sessao = SessaoFalsa(*respostas)
+    cliente = ClienteGoogleCalendar(
+        config, sessao=sessao, autenticacao=AuthFalsa(), dormir=lambda _s: None
+    )
+    return cliente, sessao
+
+
 def test_agenda_monta_evento_com_hora(config_falsa):
-    cliente = ClienteGoogleCalendar(config_falsa, sessao=SessaoFalsa())
+    cliente, _ = _agenda(config_falsa)
     corpo = cliente.montar_evento("Reunião", "2026-03-12", "14:00", 90)
 
-    assert corpo["start"]["dateTime"] == "2026-03-12T14:00:00"
-    assert corpo["end"]["dateTime"] == "2026-03-12T15:30:00"
+    # O deslocamento vai explícito no payload, e sai do banco de fusos.
+    assert corpo["start"]["dateTime"] == "2026-03-12T14:00:00-03:00"
+    assert corpo["end"]["dateTime"] == "2026-03-12T15:30:00-03:00"
     assert corpo["start"]["timeZone"] == "America/Sao_Paulo"
 
 
+def test_agenda_atravessa_a_meia_noite_sem_voltar_no_tempo(config_falsa):
+    """O fim de um evento das 23h30 é no dia seguinte, não às 00h30 do mesmo dia."""
+    cliente, _ = _agenda(config_falsa)
+    corpo = cliente.montar_evento("Virada", "2026-03-12", "23:30", 60)
+
+    assert corpo["end"]["dateTime"] == "2026-03-13T00:30:00-03:00"
+
+
 def test_agenda_sem_hora_vira_dia_inteiro(config_falsa):
-    cliente = ClienteGoogleCalendar(config_falsa, sessao=SessaoFalsa())
+    cliente, _ = _agenda(config_falsa)
     corpo = cliente.montar_evento("Prazo", "2026-03-12")
 
+    # Dia inteiro no Google é intervalo meio-aberto: o fim é o dia seguinte.
     assert corpo["start"] == {"date": "2026-03-12"}
+    assert corpo["end"] == {"date": "2026-03-13"}
     assert "dateTime" not in corpo["start"]
 
 
-def test_agenda_token_ausente_da_instrucao(config_falsa, tmp_path):
+# -- autenticação ------------------------------------------------------------
+
+
+def test_agenda_token_ausente_da_instrucao(tmp_path):
     config = Config(google_token_path=str(tmp_path / "nao-existe.json"))
     cliente = ClienteGoogleCalendar(config, sessao=SessaoFalsa())
 
-    with pytest.raises(RuntimeError, match="autorizar_google.py"):
+    with pytest.raises(ErroCredencialGoogle, match="autorizar_google.py"):
         cliente.token()
 
 
-def test_agenda_token_incompleto_da_instrucao(config_falsa, tmp_path):
+def test_agenda_token_incompleto_da_instrucao(tmp_path):
     caminho = tmp_path / "token.json"
     caminho.write_text(json.dumps({"refresh_token": "x"}), encoding="utf-8")
     config = Config(google_token_path=str(caminho))
     cliente = ClienteGoogleCalendar(config, sessao=SessaoFalsa())
 
-    with pytest.raises(RuntimeError, match="client_id"):
+    with pytest.raises(ErroCredencialGoogle, match="client_id"):
         cliente.token()
 
 
-def test_agenda_renova_token_e_cria_evento(config_falsa, tmp_path):
+def test_agenda_refresh_token_recusado_manda_reautorizar(tmp_path):
     caminho = tmp_path / "token.json"
     caminho.write_text(
-        json.dumps(
-            {"refresh_token": "r-falso", "client_id": "c-falso", "client_secret": "s-falso"}
-        ),
+        json.dumps({"refresh_token": "r", "client_id": "c", "client_secret": "s"}),
         encoding="utf-8",
     )
-    config = Config(google_token_path=str(caminho), google_calendar_id="primary")
-    sessao = SessaoFalsa(
-        RespostaFalsa({"access_token": "token-temporario", "expires_in": 3600}),
-        RespostaFalsa({"id": "evento-xyz"}),
-    )
+    config = Config(google_token_path=str(caminho))
+    sessao = SessaoFalsa(RespostaFalsa({"error": "invalid_grant"}, 400))
     cliente = ClienteGoogleCalendar(config, sessao=sessao)
 
-    assert cliente.criar_evento("Reunião", "2026-03-12", "14:00") == "evento-xyz"
-    assert sessao.chamadas[0]["data"]["grant_type"] == "refresh_token"
-    assert sessao.chamadas[1]["headers"]["Authorization"] == "Bearer token-temporario"
+    with pytest.raises(ErroCredencialGoogle, match="reautorizar"):
+        cliente.token()
 
 
-def test_agenda_reutiliza_token_valido(config_falsa, tmp_path):
+def test_agenda_conta_de_servico_ausente_explica(tmp_path):
+    config = Config(google_service_account_path=str(tmp_path / "nao-existe.json"))
+    cliente = ClienteGoogleCalendar(config, sessao=SessaoFalsa())
+
+    with pytest.raises(ErroCredencialGoogle, match="GOOGLE_SERVICE_ACCOUNT_PATH"):
+        cliente.token()
+
+
+def test_agenda_conta_de_servico_tem_prioridade(tmp_path):
+    """Com as duas rotas configuradas, vence a que não precisa de humano."""
+    config = Config(
+        google_token_path=str(tmp_path / "token.json"),
+        google_service_account_path=str(tmp_path / "conta.json"),
+    )
+    cliente = ClienteGoogleCalendar(config, sessao=SessaoFalsa())
+    assert cliente.auth.descricao == "conta-de-servico"
+
+
+def test_agenda_qualquer_uma_das_rotas_deixa_a_integracao_pronta(tmp_path):
+    assert not Config().pronta("google_calendar")
+    assert Config(google_token_path="/tmp/t.json").pronta("google_calendar")
+    assert Config(google_service_account_path="/tmp/c.json").pronta("google_calendar")
+
+
+def test_agenda_sem_nenhuma_rota_cita_as_duas(config_vazia):
+    with pytest.raises(ConfiguracaoAusente) as erro:
+        ClienteGoogleCalendar(config_vazia)
+    assert "GOOGLE_TOKEN_PATH ou GOOGLE_SERVICE_ACCOUNT_PATH" in str(erro.value)
+
+
+def test_agenda_reutiliza_token_valido(tmp_path):
     caminho = tmp_path / "token.json"
     caminho.write_text(
-        json.dumps(
-            {"refresh_token": "r", "client_id": "c", "client_secret": "s"}
-        ),
+        json.dumps({"refresh_token": "r", "client_id": "c", "client_secret": "s"}),
         encoding="utf-8",
     )
     config = Config(google_token_path=str(caminho))
@@ -247,3 +320,160 @@ def test_agenda_reutiliza_token_valido(config_falsa, tmp_path):
     assert cliente.token() == "abc"
     assert cliente.token() == "abc"  # não renova de novo
     assert len(sessao.chamadas) == 1
+
+
+# -- criação e conflito ------------------------------------------------------
+
+
+def test_agenda_checa_conflito_antes_de_criar(config_falsa):
+    cliente, sessao = _agenda(
+        config_falsa, _livre(), RespostaFalsa({"id": "evento-xyz"})
+    )
+
+    assert cliente.criar_evento("Reunião", "2026-03-12", "14:00") == "evento-xyz"
+
+    # Primeiro freeBusy, só então a criação.
+    assert sessao.chamadas[0]["url"].endswith("/freeBusy")
+    assert sessao.chamadas[0]["json"]["timeMin"] == "2026-03-12T14:00:00-03:00"
+    assert sessao.chamadas[1]["url"].endswith("/events")
+    assert sessao.chamadas[1]["headers"]["Authorization"] == "Bearer token-temporario"
+
+
+def test_agenda_recusa_horario_ocupado(config_falsa):
+    ocupado = RespostaFalsa(
+        {
+            "calendars": {
+                "primary": {
+                    "busy": [
+                        {
+                            "start": "2026-03-12T14:00:00-03:00",
+                            "end": "2026-03-12T15:00:00-03:00",
+                        }
+                    ]
+                }
+            }
+        }
+    )
+    cliente, sessao = _agenda(config_falsa, ocupado)
+
+    with pytest.raises(ConflitoDeAgenda) as erro:
+        cliente.criar_evento("Reunião", "2026-03-12", "14:00")
+
+    assert "14:00" in str(erro.value)
+    # Nada foi criado: a única chamada foi a consulta.
+    assert len(sessao.chamadas) == 1
+
+
+def test_agenda_permite_sobrepor_quando_pedido(config_falsa):
+    """Sobrepor é possível, mas só de propósito — nunca por omissão."""
+    cliente, sessao = _agenda(config_falsa, RespostaFalsa({"id": "evento-2"}))
+
+    evento = cliente.criar_evento(
+        "Reunião", "2026-03-12", "14:00", permitir_conflito=True
+    )
+
+    assert evento == "evento-2"
+    assert len(sessao.chamadas) == 1  # nem consultou
+
+
+def test_agenda_dia_inteiro_nao_checa_conflito(config_falsa):
+    cliente, sessao = _agenda(config_falsa, RespostaFalsa({"id": "evento-3"}))
+
+    assert cliente.criar_evento("Prazo", "2026-03-12") == "evento-3"
+    assert sessao.chamadas[0]["url"].endswith("/events")
+
+
+# -- tratamento de erro ------------------------------------------------------
+
+
+def test_agenda_repete_quando_estoura_o_limite(config_falsa):
+    """429 é retentável: recua e tenta de novo antes de desistir."""
+    cliente, sessao = _agenda(
+        config_falsa,
+        RespostaFalsa({"error": {"message": "Rate Limit Exceeded"}}, 429, {"Retry-After": "0"}),
+        RespostaFalsa({"calendars": {"primary": {"busy": []}}}),
+        RespostaFalsa({"id": "evento-ok"}),
+    )
+
+    assert cliente.criar_evento("Reunião", "2026-03-12", "14:00") == "evento-ok"
+    assert len(sessao.chamadas) == 3  # a primeira falhou e foi repetida
+
+
+def test_agenda_desiste_do_limite_depois_das_tentativas(config_falsa):
+    cliente, sessao = _agenda(
+        config_falsa, *[RespostaFalsa({"error": {"message": "Rate Limit"}}, 429)] * 3
+    )
+
+    with pytest.raises(ErroLimiteGoogle, match="Limite de requisições"):
+        cliente.proximos_dias()
+    assert len(sessao.chamadas) == 3
+
+
+def test_agenda_repete_quando_a_api_esta_fora(config_falsa):
+    cliente, sessao = _agenda(
+        config_falsa, *[RespostaFalsa({"error": {"message": "Backend Error"}}, 503)] * 3
+    )
+
+    with pytest.raises(ErroIndisponivelGoogle, match="indisponível"):
+        cliente.proximos_dias()
+    assert len(sessao.chamadas) == 3
+
+
+def test_agenda_nao_repete_credencial_invalida(config_falsa):
+    """403 não melhora com insistência: falha na primeira e diz o que fazer."""
+    cliente, sessao = _agenda(
+        config_falsa,
+        RespostaFalsa({"error": {"message": "Insufficient Permission"}}, 403),
+    )
+
+    with pytest.raises(ErroCredencialGoogle, match="compartilhada"):
+        cliente.proximos_dias()
+    assert len(sessao.chamadas) == 1
+
+
+def test_agenda_timeout_de_rede_vira_erro_de_indisponibilidade(config_falsa):
+    class SessaoQueCai:
+        def __init__(self) -> None:
+            self.chamadas = 0
+
+        def request(self, *a, **k):
+            self.chamadas += 1
+            raise requests.Timeout("tempo esgotado")
+
+    sessao = SessaoQueCai()
+    cliente = ClienteGoogleCalendar(
+        config_falsa, sessao=sessao, autenticacao=AuthFalsa(), dormir=lambda _s: None
+    )
+
+    with pytest.raises(ErroIndisponivelGoogle, match="inalcançável"):
+        cliente.proximos_dias()
+    assert sessao.chamadas == 3
+
+
+def test_agenda_erro_nao_vaza_o_token(config_falsa):
+    cliente, _ = _agenda(
+        config_falsa, RespostaFalsa({"error": {"message": "Not Found"}}, 404)
+    )
+
+    with pytest.raises(ErroGoogleCalendar) as erro:
+        cliente.proximos_dias()
+    assert "token-temporario" not in str(erro.value)
+
+
+def test_agenda_toda_chamada_leva_timeout(config_falsa):
+    """Nenhuma requisição pode ficar pendurada sem limite."""
+    class SessaoQueOlhaTimeout:
+        def __init__(self) -> None:
+            self.timeouts: list = []
+
+        def request(self, metodo, url, headers=None, json=None, timeout=None, params=None):
+            self.timeouts.append(timeout)
+            return RespostaFalsa({"items": []})
+
+    sessao = SessaoQueOlhaTimeout()
+    cliente = ClienteGoogleCalendar(
+        config_falsa, sessao=sessao, autenticacao=AuthFalsa()
+    )
+    cliente.proximos_dias()
+
+    assert sessao.timeouts and all(t and t > 0 for t in sessao.timeouts)

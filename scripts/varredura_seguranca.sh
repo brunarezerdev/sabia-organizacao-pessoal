@@ -28,10 +28,17 @@ ARQUIVOS=$(git ls-files 2>/dev/null | grep -vE "$EXCLUIR" \
        -not -path './.fila/*' \
        -not -name 'varredura_seguranca.sh' -not -name 'test_seguranca.py')
 
+# checar <rótulo> <padrão> [regex de caminhos dispensados deste padrão]
+#
+# A dispensa é do PADRÃO naquele caminho, não do arquivo: quem for dispensado de
+# uma regra continua sendo varrido por todas as outras.
 checar() {
-  local rotulo="$1" padrao="$2"
-  local saida
-  saida=$(printf '%s\n' "$ARQUIVOS" | xargs -r grep -nEI "$padrao" 2>/dev/null)
+  local rotulo="$1" padrao="$2" dispensa="${3:-}"
+  local alvos="$ARQUIVOS" saida
+  if [ -n "$dispensa" ]; then
+    alvos=$(printf '%s\n' "$ARQUIVOS" | grep -vE "$dispensa")
+  fi
+  saida=$(printf '%s\n' "$alvos" | xargs -r grep -nEI "$padrao" 2>/dev/null)
   if [ -n "$saida" ]; then
     echo "  [FALHOU] $rotulo"
     printf '%s\n' "$saida" | sed 's/^/      /'
@@ -70,7 +77,13 @@ checar "cartão de crédito"           '\b[0-9]{4}[ -][0-9]{4}[ -][0-9]{4}[ -][0
 echo
 echo "3. Contexto que não pertence a um repositório público"
 # Caminho absoluto de máquina revela usuário e estrutura do host de origem.
-checar "caminho absoluto de host"    '(^|[^a-zA-Z0-9])/(opt|home|Users|srv)/[A-Za-z0-9_.-]+/'
+#
+# Dispensados só deste padrão: `sabia/` e `docs/estrutura-sabia.md`, que
+# documentam a implantação real numa VPS. Ali os caminhos são o conteúdo — onde
+# o gateway lê a fila, onde ficam as almas dos agentes. O código entregue
+# (src/, scripts/, tests/, agentes/) continua sem nenhum caminho de máquina.
+checar "caminho absoluto de host"    '(^|[^a-zA-Z0-9])/(opt|home|Users|srv)/[A-Za-z0-9_.-]+/' \
+       '^(sabia/|docs/estrutura-sabia\.md$)'
 checar "e-mail pessoal real"         '[A-Za-z0-9._%+-]+@(gmail|hotmail|outlook|yahoo|icloud|proton)\.[A-Za-z]{2,}'
 checar "URL de banco de dados"       '(postgres|postgresql|mysql|mongodb)://[^ "'"'"']*:[^ "'"'"']*@'
 checar "IP privado explícito"        '\b(10|192\.168|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]{1,3}\.[0-9]{1,3}\b'

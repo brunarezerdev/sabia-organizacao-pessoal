@@ -9,5 +9,13 @@ requests>=2.31
 # rodado uma única vez por scripts/autorizar_google.py.
 # google-auth-oauthlib>=1.2
 
+# Necessária para a rota de conta de serviço da Google Agenda: é dela que sai a
+# assinatura RSA do JWT. Quem usa a rota OAuth (GOOGLE_TOKEN_PATH) não precisa.
+google-auth>=2.30
+
+# Necessária para expor a Google Agenda ao agente como servidor MCP
+# (scripts/openclaw/gcal_mcp.sh). Quem só usa a CLI do sop não precisa.
+mcp>=2.0
+
 # Desenvolvimento.
 pytest>=8.0

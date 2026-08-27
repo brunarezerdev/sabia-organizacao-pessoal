@@ -32,10 +32,27 @@ set -euo pipefail
 
 AGENTE="${1:-${OPENCLAW_AGENTE:-main}}"
 TIMEOUT="${OPENCLAW_TIMEOUT:-120}"
-OPENCLAW_BIN="${OPENCLAW_BIN:-openclaw}"
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-command -v "$OPENCLAW_BIN" >/dev/null 2>&1 || {
-  echo "ERRO: CLI do openclaw não encontrado ($OPENCLAW_BIN)." >&2
+# O OpenClaw é instalado localmente pelo `npm install` do projeto (ver o
+# comentário sobre node_modules no .gitignore), então na maioria das máquinas
+# ele NÃO está no PATH. Procurar o binário local antes de desistir evita que
+# toda mensagem caia no classificador heurístico numa instalação que, do ponto
+# de vista de quem instalou, está correta.
+if [ -n "${OPENCLAW_BIN:-}" ]; then
+  :
+elif command -v openclaw >/dev/null 2>&1; then
+  OPENCLAW_BIN=openclaw
+elif [ -x "$RAIZ/node_modules/.bin/openclaw" ]; then
+  OPENCLAW_BIN="$RAIZ/node_modules/.bin/openclaw"
+else
+  echo "ERRO: CLI do openclaw não encontrado no PATH nem em node_modules/.bin." >&2
+  echo "      Rode scripts/openclaw/instalar.sh ou defina OPENCLAW_BIN." >&2
+  exit 1
+fi
+
+command -v "$OPENCLAW_BIN" >/dev/null 2>&1 || [ -x "$OPENCLAW_BIN" ] || {
+  echo "ERRO: CLI do openclaw não executável ($OPENCLAW_BIN)." >&2
   exit 1
 }
 
