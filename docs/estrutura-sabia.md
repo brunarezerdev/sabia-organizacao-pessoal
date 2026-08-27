@@ -187,7 +187,7 @@ pelo mesmo update.
 Dois bots, dois tokens, duas filas, zero interseção. A Sábia **não** lê nem escreve em
 `/opt/aria-bot/`, e a Ária não conhece o caminho da Sábia. Não há como uma responder pela outra.
 
-### As três travas contra eco
+### As quatro travas contra eco
 
 Já houve incidente nesta operação em que a saída do próprio bot voltou como entrada e virou spam
 (msg 724). Aqui isso é barrado em quatro lugares:
@@ -240,6 +240,46 @@ interativa chega sem `XDG_RUNTIME_DIR` e falha com "Failed to connect to bus";
 
 Reiniciar é necessário depois de trocar `SOUL.md` ou identidade: o gateway lê a alma no início da
 sessão e mantém em memória.
+
+## Validação
+
+Revalidado em 27/08/2026, com o gateway no ar desde 26/08 23:43 sem reinício.
+
+| o quê | evidência |
+| --- | --- |
+| Codex responde | `winnerProvider: openai`, `winnerModel: gpt-5.5`, `authMode: auth-profile` |
+| Sábia roteia | "Python: `neo-dev`; roteiro de Instagram: `jonathan-copy`" |
+| Agente executa | `subagent_runs` com `outcome.status: ok` e `frozen_result_text` da filha |
+| Sábia devolve | "Agente executor: `monica-projetos` / Resposta: Mônica no ar pela Sábia" |
+| Telegram ponta a ponta | 26/08 22:07, inbound de `5052079460` e `telegram outbound send ok` |
+
+### O `sessions_spawn error` do trajeto não é falha
+
+No `sessions tail` a delegação aparece assim, e assusta:
+
+```
+tool.call    sessions_spawn
+tool.result  sessions_spawn error
+tool.call    sessions_yield
+tool.result  sessions_yield ok
+```
+
+O `error` ali é o encerramento do turno, não o resultado do trabalho. O `sessions_spawn` roda em
+modo assíncrono: ele cria a filha e devolve um resultado terminal que obriga a mãe a soltar o
+turno. Quem tem a verdade do trabalho é a tabela `subagent_runs`, em
+`~/.openclaw/state/openclaw.sqlite`:
+
+```bash
+bash sabia/ultimas_delegacoes.sh
+```
+
+Não use o cliente `sqlite3` aqui: ele não está instalado nesta VPS. O script acima lê o banco
+pelo módulo `sqlite3` do Python, em modo somente leitura.
+
+Nas execuções acima o `outcome_json` traz `{"status":"ok"}` e o `frozen_result_text` traz o texto
+da filha. A mãe acorda depois do `sessions_yield`, recebe esse texto e responde. Por isso uma
+chamada de CLI de um turno só volta com `livenessState: "paused"`: a resposta final vem no turno
+seguinte, e no Telegram ela chega como mensagem nova.
 
 ## Pontos abertos
 
