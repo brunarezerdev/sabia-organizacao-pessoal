@@ -53,7 +53,7 @@ def mensagem():
 def item():
     return Item(
         titulo="Reunião com o time",
-        agente="secretaria",
+        agente="beija-flor",
         categoria="compromisso",
         data="2026-03-12",
         hora="14:00",

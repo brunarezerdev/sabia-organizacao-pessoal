@@ -30,7 +30,7 @@ def test_mensagem_com_data_grava_e_cria_evento(registro, banco, agenda):
     assert resultado.sucesso
     assert resultado.id_no_banco == "pagina-1"
     assert resultado.id_do_evento == "evento-1"
-    assert banco.itens[0].agente == "secretaria"
+    assert banco.itens[0].agente == "beija-flor"
     assert agenda.eventos[0]["data"] == "2026-03-12"
     assert agenda.eventos[0]["hora"] == "14:00"
 
@@ -83,7 +83,7 @@ def test_sem_integracao_configurada_ainda_classifica(registro):
     """Sem Notion e sem Agenda, o fluxo roda e devolve a classificação."""
     resultado = montar(registro).executar(Mensagem(id="m6", texto="Estudar amanhã"))
 
-    assert resultado.classificacao.agente == "educacional"
+    assert resultado.classificacao.agente == "elefante"
     assert resultado.id_no_banco is None
     assert resultado.sucesso  # não gravar não é erro quando não há destino
 
@@ -96,7 +96,7 @@ def test_resposta_menciona_agente_e_evento(registro, banco, agenda):
     resultado = automacao.executar(Mensagem(id="m7", texto="Reunião amanhã às 10h"))
     texto = Automacao.montar_resposta(resultado)
 
-    assert "secretaria" in texto
+    assert "beija-flor" in texto
     assert "2026-03-11" in texto
     assert "Evento criado na agenda." in texto
 
@@ -114,7 +114,7 @@ def test_notificacao_recebe_a_resposta(registro, banco):
     automacao.executar(Mensagem(id="m9", texto="Comprar leite"))
 
     assert len(enviadas) == 1
-    assert "lifestyle" in enviadas[0]
+    assert "esquilo" in enviadas[0]
 
 
 # -- fila --------------------------------------------------------------------

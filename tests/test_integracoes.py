@@ -152,7 +152,7 @@ def test_notion_mapeia_item_para_propriedades(config_falsa, item):
     props = ClienteNotion(config_falsa, sessao=SessaoFalsa()).propriedades(item)
 
     assert props["Titulo"]["title"][0]["text"]["content"] == "Reunião com o time"
-    assert props["Agente"]["select"]["name"] == "secretaria"
+    assert props["Agente"]["select"]["name"] == "beija-flor"
     assert props["Categoria"]["select"]["name"] == "compromisso"
     assert props["Data"]["date"]["start"] == "2026-03-12T14:00:00-03:00"
     assert "duracao_minutos" in props["Detalhes"]["rich_text"][0]["text"]["content"]

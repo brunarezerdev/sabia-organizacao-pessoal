@@ -48,17 +48,23 @@ append não destrutivo, valida na escrita e cria o workspace. É o que
 
 ## Os agentes
 
-Quatro agentes desta estrutura permanecem instalados: a orquestradora e três
-especialistas de domínio. As definições de `secretaria` e `lifestyle` continuam
-no roteamento Python histórico, mas têm `openclaw_ativo: false` e não são
-registradas no OpenClaw; suas funções foram absorvidas pela `juliana-ops`.
+Quatro agentes desta estrutura permanecem instalados: a Sábia e três
+especialistas de domínio. `beija-flor`, `abelha` e `cervo` continuam no
+roteamento Python, mas têm `openclaw_ativo: false` e não são registrados no
+OpenClaw; agenda e rotina doméstica seguem com a `juliana-ops`.
+
+Os ids `financeira`, `projetos` e `educacional` foram renomeados para `esquilo`,
+`raposa` e `elefante` em 29/08/2026, junto com a adoção da identidade da Sábia.
+A declaração do projeto já usa os nomes novos; o registro vivo do OpenClaw ainda
+tem os antigos, e só passa a valer depois de rodar
+`scripts/openclaw/registrar_agentes.sh`.
 
 | id | Nome | Papel | Modelo | Tools |
 |---|---|---|---|---|
-| `main` | Orquestradora 🧭 | Triagem e roteamento | `openai/gpt-5.5` | `fs.read`, `grep`, `agent.invoke` |
-| `financeira` | Financeira 💰 | Gastos e metas | `openai/gpt-5.5` | `fs.read`, `fs.write` |
-| `projetos` | Projetos e Carreira 📋 | Kanban, marcos, métricas | `openai/gpt-5.5` | `fs.read`, `fs.write` |
-| `educacional` | Educacional 🎓 | Estudos, material, flashcards | `openai/gpt-5.5` | `fs.read`, `fs.write`, `web.fetch` |
+| `main` | Sábia 🦉 | Compreender, decidir e despachar | `openai/gpt-5.5` | `fs.read`, `grep`, `agent.invoke` |
+| `esquilo` | Esquilo 🐿️ | Guardar: finanças, compras, estoque | `openai/gpt-5.5` | `fs.read`, `fs.write` |
+| `raposa` | Raposa 🦊 | Planejar: projetos, metas, prioridades | `openai/gpt-5.5` | `fs.read`, `fs.write` |
+| `elefante` | Elefante 🐘 | Lembrar: memória, documentos, estudo | `openai/gpt-5.5` | `fs.read`, `fs.write`, `web.fetch` |
 
 ### Como as tools foram escolhidas
 
@@ -67,7 +73,7 @@ superfície de erro e de custo.
 
 - **`fs.read` + `fs.write`** para todo agente de domínio: ele lê o contexto e
   produz o registro. Nada além disso.
-- **`web.fetch`** só na Educacional, que precisa abrir o material de estudo
+- **`web.fetch`** só no Elefante, que precisa abrir o material de estudo
   referenciado na mensagem.
 - **`agent.invoke`** só na orquestradora. Dar delegação a um especialista abre
   caminho para loop infinito: A chama B, B chama A. Há um teste que garante

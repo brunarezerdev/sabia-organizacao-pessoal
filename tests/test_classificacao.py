@@ -83,17 +83,21 @@ def test_titulo_longo_e_truncado():
 @pytest.mark.parametrize(
     "texto,agente,categoria",
     [
-        ("Reunião com o time na quinta às 14h", "secretaria", "compromisso"),
-        ("Lembrar de renovar a assinatura", "secretaria", "lembrete"),
-        ("Acabou o café, comprar no mercado", "lifestyle", "compras"),
-        ("Cardápio de terça: macarrão", "lifestyle", "cardapio"),
-        ("Faxina da cozinha no sábado", "lifestyle", "limpeza"),
-        ("Gastei R$ 45,90 no almoço", "financeira", "gasto"),
-        ("Meta de juntar 3000 reais", "financeira", "meta"),
-        ("Projeto do portfólio: escrever a home", "projetos", "tarefa"),
-        ("Entrega do relatório em 30/09", "projetos", "marco"),
-        ("Estudar integração de APIs na sexta", "educacional", "estudo"),
-        ("Ler o artigo sobre agentes", "educacional", "material"),
+        ("Reunião com o time na quinta às 14h", "beija-flor", "compromisso"),
+        ("Lembrar de renovar a assinatura", "beija-flor", "lembrete"),
+        ("Acabou o café, comprar no mercado", "esquilo", "compras"),
+        ("Conferir a despensa no sábado", "esquilo", "estoque"),
+        ("Cardápio de terça: macarrão", "cervo", "cardapio"),
+        ("Buscar as crianças na escola", "cervo", "familia"),
+        ("Faxina da cozinha no sábado", "abelha", "limpeza"),
+        ("Rotina da casa de segunda", "abelha", "rotina"),
+        ("Gastei R$ 45,90 no almoço", "esquilo", "gasto"),
+        ("Meta de juntar 3000 reais", "esquilo", "meta"),
+        ("Projeto do portfólio: escrever a home", "raposa", "tarefa"),
+        ("Entrega do relatório em 30/09", "raposa", "marco"),
+        ("Guardar a garantia da geladeira", "elefante", "documento"),
+        ("Estudar integração de APIs na sexta", "elefante", "estudo"),
+        ("Ler o artigo sobre agentes", "elefante", "material"),
     ],
 )
 def test_heuristica_roteia_para_o_agente_certo(texto, agente, categoria, registro):
@@ -102,9 +106,9 @@ def test_heuristica_roteia_para_o_agente_certo(texto, agente, categoria, registr
 
 
 def test_gasto_sem_valor_pede_confirmacao(registro):
-    """Regra financeira do projeto: nunca inventar um número."""
+    """Regra do Esquilo: nunca inventar um número."""
     c = ClassificadorHeuristico().classificar("Gastei no posto ontem", registro, HOJE)
-    assert c.agente == "financeira"
+    assert c.agente == "esquilo"
     assert c.valor is None
     assert c.precisa_confirmacao is True
 
@@ -167,7 +171,7 @@ def test_ia_pede_saida_estruturada(registro, config_falsa):
     """A resposta é validada pela API via JSON Schema, sem parsing frágil."""
     cliente = ClienteFalso(
         {
-            "agente": "secretaria",
+            "agente": "beija-flor",
             "categoria": "compromisso",
             "titulo": "Consulta médica",
             "data": "2026-03-12",
@@ -181,7 +185,7 @@ def test_ia_pede_saida_estruturada(registro, config_falsa):
         "consulta na quinta às 9", registro, HOJE
     )
 
-    assert c.agente == "secretaria"
+    assert c.agente == "beija-flor"
     assert c.data == "2026-03-12"
     assert c.origem == "ia"
 
@@ -194,7 +198,7 @@ def test_ia_pede_saida_estruturada(registro, config_falsa):
 def test_ia_recebe_o_catalogo_de_agentes(registro, config_falsa):
     cliente = ClienteFalso(
         {
-            "agente": "lifestyle",
+            "agente": "esquilo",
             "categoria": "compras",
             "titulo": "Café",
             "observacao": "",
@@ -226,7 +230,7 @@ def test_agente_inexistente_e_resolvido_pela_categoria(registro, config_falsa):
     c = ClassificadorAnthropic(config_falsa, cliente=cliente).classificar(
         "multa de trânsito", registro, HOJE
     )
-    assert c.agente == "financeira"
+    assert c.agente == "esquilo"
 
 
 def test_recusa_do_modelo_cai_na_heuristica(registro, config_falsa):
@@ -236,13 +240,13 @@ def test_recusa_do_modelo_cai_na_heuristica(registro, config_falsa):
         "comprar arroz", registro, HOJE
     )
     assert c.origem == "heuristica"
-    assert c.agente == "lifestyle"
+    assert c.agente == "esquilo"
 
 
 def test_data_relativa_da_ia_e_normalizada(registro, config_falsa):
     cliente = ClienteFalso(
         {
-            "agente": "secretaria",
+            "agente": "beija-flor",
             "categoria": "lembrete",
             "titulo": "Pagar conta",
             "data": "amanhã",

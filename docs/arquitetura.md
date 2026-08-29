@@ -64,11 +64,11 @@ corpo.
 
 1. **O prompt é o produto.** Ajustar o comportamento de um agente é editar
    prose, não código. Quem edita não precisa saber Python.
-2. **Regras de domínio não se generalizam.** O agente Financeiro tem uma regra
-   que nenhum outro tem — nunca inventar um valor. O de Lifestyle tem outra —
-   uma lista falada vira vários registros. Espremer isso num prompt único
+2. **Regras de domínio não se generalizam.** O Esquilo tem uma regra que
+   nenhum outro tem: nunca inventar um valor. O Cervo tem outra: em assunto de
+   criança e de saúde, na dúvida se pergunta. Espremer isso num prompt único
    produziria algo impossível de manter.
-3. **O prompt vira documentação.** Ler `agentes/financeira.md` é entender o que
+3. **O prompt vira documentação.** Ler `agentes/esquilo.md` é entender o que
    o agente faz, sem ler implementação.
 
 **Restrição que isso impõe:** as categorias não podem se sobrepor entre agentes,

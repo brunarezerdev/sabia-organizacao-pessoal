@@ -36,23 +36,34 @@ def declaracao(registro):
 def test_declara_a_orquestradora_e_os_tres_agentes_ativos(declaracao):
     assert declaracao.principal.id == "main"
     assert {p.id for p in declaracao.subagentes} == {
-        "financeira",
-        "projetos",
-        "educacional",
+        "esquilo",
+        "raposa",
+        "elefante",
     }
 
 
-def test_orquestradora_nao_vira_um_sexto_agente_de_dominio(registro):
-    """`_orquestradora.md` mora em agentes/, mas fora do roteamento."""
+def test_a_sabia_e_a_orquestradora_e_nao_vira_agente_de_dominio(registro):
+    """`_orquestradora.md` mora em agentes/, mas fora do roteamento.
+
+    O id continua `main` porque é o slot do agente principal no OpenClaw. A
+    identidade dela, a que aparece na alma e para quem usa, é a Sábia 🦉.
+    """
+    from sop.agentes import carregar_orquestradora
+
     assert "main" not in registro
-    assert len(registro) == 5
+    assert len(registro) == 6
+
+    sabia = carregar_orquestradora(RAIZ / "agentes")
+    assert sabia.titulo == "Sábia"
+    assert sabia.emoji == "🦉"
 
 
 def test_agentes_desativados_continuam_no_roteamento_sem_irem_ao_openclaw(registro, declaracao):
-    assert {"secretaria", "lifestyle"} <= set(registro.nomes())
+    assert {"beija-flor", "abelha", "cervo"} <= set(registro.nomes())
     declarados = {perfil.id for perfil in declaracao.subagentes}
-    assert "secretaria" not in declarados
-    assert "lifestyle" not in declarados
+    assert "beija-flor" not in declarados
+    assert "abelha" not in declarados
+    assert "cervo" not in declarados
 
 
 def test_cada_agente_tem_workspace_proprio(declaracao):
@@ -108,7 +119,7 @@ def test_modelo_do_arquivo_vence_o_do_projeto(registro):
     """Um agente pode pedir outro modelo sem mudar o resto."""
     from dataclasses import replace
 
-    agente = replace(registro.obter("financeira"), modelo="openai/gpt-5.5-mini")
+    agente = replace(registro.obter("esquilo"), modelo="openai/gpt-5.5-mini")
     perfil = oc.perfil_de(agente, modelo="openai/gpt-5.5")
     assert perfil.modelo == "openai/gpt-5.5-mini"
 
@@ -127,7 +138,7 @@ def test_declaracao_nao_carrega_credencial(declaracao):
     import re
 
     texto = declaracao.para_json().lower()
-    # Com fronteira de palavra: "secretaria" é o nome de um agente, não um segredo.
+    # Com fronteira de palavra: "beija-flor" é o nome de um agente, não um segredo.
     for proibido in ("api_key", "apikey", "token", "secret", "senha", "bearer"):
         assert not re.search(rf"\b{proibido}\b", texto), proibido
 
@@ -136,8 +147,8 @@ def test_declaracao_nao_carrega_credencial(declaracao):
 
 
 def test_alma_preserva_o_prompt_original(registro, declaracao):
-    agente = registro.obter("financeira")
-    perfil = next(p for p in declaracao.subagentes if p.id == "financeira")
+    agente = registro.obter("esquilo")
+    perfil = next(p for p in declaracao.subagentes if p.id == "esquilo")
     alma = oc.montar_alma(agente, perfil, registro)
     # Uma frase distintiva do prompt escrito à mão precisa sobreviver.
     trecho = agente.prompt.strip().splitlines()[2]
@@ -155,8 +166,8 @@ def test_alma_da_orquestradora_resolve_os_marcadores(registro):
 
 
 def test_alma_declara_as_tools_do_agente(registro, declaracao):
-    perfil = next(p for p in declaracao.subagentes if p.id == "educacional")
-    alma = oc.montar_alma(registro.obter("educacional"), perfil, registro)
+    perfil = next(p for p in declaracao.subagentes if p.id == "elefante")
+    alma = oc.montar_alma(registro.obter("elefante"), perfil, registro)
     assert "web.fetch" in alma
     assert "shell.exec" not in alma
 
@@ -181,7 +192,7 @@ def test_escrever_e_idempotente(tmp_path, registro):
 # -- backend que fala com o CLI ----------------------------------------------
 
 RESPOSTA_BOA = """{
-  "agente": "financeira", "categoria": "gasto", "titulo": "Mercado",
+  "agente": "esquilo", "categoria": "gasto", "titulo": "Mercado",
   "data": null, "hora": null, "valor": 82.5,
   "observacao": "", "precisa_confirmacao": false, "confianca": 0.9
 }"""
@@ -214,12 +225,12 @@ def test_classifica_pela_saida_do_cli(registro):
     classificador = ClassificadorOpenClaw(config_openclaw(), executor=executor)
     c = classificador.classificar("gastei 82,50 no mercado", registro, HOJE)
 
-    assert c.agente == "financeira"
+    assert c.agente == "esquilo"
     assert c.valor == 82.5
     assert c.origem == "openclaw"
     # A instrução mandada ao CLI carrega o catálogo e a mensagem.
     _, entrada = chamadas[0]
-    assert "secretaria" in entrada and "mercado" in entrada
+    assert "beija-flor" in entrada and "mercado" in entrada
 
 
 def test_saida_ilegivel_cai_na_heuristica_em_vez_de_estourar(registro):
@@ -229,7 +240,7 @@ def test_saida_ilegivel_cai_na_heuristica_em_vez_de_estourar(registro):
     )
     c = classificador.classificar("reunião amanhã às 10h", registro, HOJE)
     assert c.origem == "heuristica"
-    assert c.agente == "secretaria"
+    assert c.agente == "beija-flor"
 
 
 def test_agente_inventado_pelo_modelo_e_resgatado_pela_categoria(registro):
@@ -237,7 +248,7 @@ def test_agente_inventado_pelo_modelo_e_resgatado_pela_categoria(registro):
     classificador = ClassificadorOpenClaw(
         config_openclaw(), executor=lambda c, e: resposta
     )
-    assert classificador.classificar("comprar arroz", registro, HOJE).agente == "lifestyle"
+    assert classificador.classificar("comprar arroz", registro, HOJE).agente == "esquilo"
 
 
 def test_erro_do_cli_propaga(registro):
@@ -255,14 +266,14 @@ def test_erro_do_cli_propaga(registro):
 @pytest.mark.parametrize(
     "bruto",
     [
-        '{"agente": "financeira"}',
-        '```json\n{"agente": "financeira"}\n```',
-        'Claro! Segue:\n\n{"agente": "financeira"}\n\nQualquer coisa é só falar.',
-        '```\n{"agente": "financeira"}\n```',
+        '{"agente": "esquilo"}',
+        '```json\n{"agente": "esquilo"}\n```',
+        'Claro! Segue:\n\n{"agente": "esquilo"}\n\nQualquer coisa é só falar.',
+        '```\n{"agente": "esquilo"}\n```',
     ],
 )
 def test_extrai_json_apesar_da_moldura(bruto):
-    assert extrair_json(bruto)["agente"] == "financeira"
+    assert extrair_json(bruto)["agente"] == "esquilo"
 
 
 @pytest.mark.parametrize("bruto", ["", "   ", "sem json nenhum aqui"])

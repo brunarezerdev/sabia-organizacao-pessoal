@@ -18,7 +18,7 @@ from .agentes import AgenteDef, Registro, carregar_registro
 from .fila import Fila
 from .modelos import Classificacao, Item, Mensagem
 
-AGENTE_PADRAO = "secretaria"
+AGENTE_PADRAO = "beija-flor"
 
 
 class Orquestradora:

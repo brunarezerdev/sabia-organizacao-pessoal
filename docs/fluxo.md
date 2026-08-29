@@ -74,7 +74,7 @@ sequenceDiagram
 
     O->>F: concluir(tarefa)
     O->>TG: confirmação do que foi entendido
-    TG-->>P: "Anotado em secretaria (compromisso)..."
+    TG-->>P: "Anotado em beija-flor (compromisso)..."
 ```
 
 ---
@@ -94,7 +94,7 @@ flowchart TD
     VAL -->|não| RESG{Resgatar pela<br/>categoria?}
 
     RESG -->|achou| CAT
-    RESG -->|não achou| PAD[secretaria<br/>+ pedir confirmação]
+    RESG -->|não achou| PAD[beija-flor<br/>+ pedir confirmação]
 
     CAT -->|sim| OK[Classificação válida]
     CAT -->|não| AJU[Usa 1ª categoria do agente<br/>+ pedir confirmação]

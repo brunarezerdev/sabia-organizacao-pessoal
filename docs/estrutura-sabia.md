@@ -12,13 +12,14 @@ Montada em 26/08/2026.
 orquestradora.
 
 **Não é** a wiki de receitas do Notion, e **não é** a estrutura pessoal antiga. Dessa estrutura,
-`educacional`, `financeira` e `projetos` continuam registrados e preservados em
-`openclaw/agentes.json`. `secretaria` e `lifestyle` foram retirados do OpenClaw em 26/08/2026,
-e suas funções passaram para a `juliana-ops`.
+`elefante`, `esquilo` e `raposa` continuam preservados em `openclaw/agentes.json` (eram
+`educacional`, `financeira` e `projetos` antes da adoção da identidade da Sábia, em 29/08/2026).
+`beija-flor`, `abelha` e `cervo` ficam fora do OpenClaw desde 26/08/2026, e suas funções operacionais
+passaram para a `juliana-ops`.
 
 ## A orquestradora
 
-A orquestradora chama-se **Sábia** 🐦 e é o agente `main` do OpenClaw. É ela que atende no
+A orquestradora chama-se **Sábia** 🦉 e é o agente `main` do OpenClaw. É ela que atende no
 `@SabiaAquiBot`: recebe a mensagem, entende, escolhe o agente e devolve o resultado.
 
 A Sábia não é a Ária. A Ária é outra assistente, de outra operação, em outro bot, com outro

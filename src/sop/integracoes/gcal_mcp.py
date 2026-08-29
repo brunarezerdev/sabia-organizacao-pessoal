@@ -161,7 +161,7 @@ def registrar_no_notion(
     """
     item = Item(
         titulo=titulo,
-        agente="secretaria",
+        agente="beija-flor",
         categoria="compromisso",
         data=data,
         hora=hora or None,

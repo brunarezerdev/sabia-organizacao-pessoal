@@ -39,13 +39,13 @@ uma dessas coisas mora em um app diferente. O custo de decidir *onde* registrar
 
 A solução é inverter a responsabilidade: **a pessoa despeja o pensamento em um
 canal só e o sistema faz a triagem.** Uma camada de IA lê a mensagem, decide
-qual dos cinco agentes especializados cuida daquilo, extrai os campos
+qual dos seis agentes especializados cuida daquilo, extrai os campos
 estruturados (data, hora, valor, projeto, disciplina) e grava no lugar certo.
 
 O que o sistema entrega:
 
 - **Captura sem fricção** — Telegram, que a pessoa já tem aberto.
-- **Classificação automática** — cinco domínios de organização pessoal.
+- **Classificação automática** — seis funções cognitivas, um agente cada.
 - **Registro estruturado** — Notion, que a pessoa consegue abrir e editar.
 - **Agendamento automático** — o que tem data vira evento na Google Agenda.
 - **Painel de acompanhamento** — a própria database do Notion, com filtros por
@@ -53,10 +53,10 @@ O que o sistema entrega:
 
 ### Por que agentes especializados e não um classificador só
 
-Cada domínio tem regras próprias que não se generalizam. O agente Financeiro
+Cada domínio tem regras próprias que não se generalizam. O Esquilo 🐿️
 tem uma regra que nenhum outro tem: **nunca inventar um valor**. Se a mensagem
 diz "gastei no posto" sem número, o registro é criado marcado para confirmação,
-em vez de chutar. O agente de Lifestyle tem outra: uma lista falada
+em vez de chutar. O Esquilo tem outra: uma lista falada
 ("preciso de arroz, feijão e sabão") vira três registros, não um.
 
 Codificar isso num prompt único produziria um monstro impossível de manter.
@@ -112,7 +112,7 @@ pessoa, não um segredo copiável. Detalhes em [`docs/openclaw.md`](docs/opencla
    ┌──────────────────┐        ┌────────────────────────────┐
    │  ORQUESTRADORA   │◄──────►│  OpenClaw                  │
    │                  │        │  provider openai (Codex)   │
-   │  entende         │        │  main + 5 subagentes,      │
+   │  entende         │        │  main + 6 subagentes,      │
    │  decide          │        │  um workspace cada         │
    │  despacha        │        └────────────────────────────┘
    │                  │        ┌──────────────────┐
@@ -169,20 +169,35 @@ O sistema foi desenhado para funcionar parcialmente configurado:
 ## Os agentes
 
 Cada agente é um arquivo Markdown em `agentes/`, com cabeçalho de metadados e o
-prompt no corpo. As categorias não se sobrepõem — cada uma pertence a um único
+prompt no corpo. As categorias não se sobrepõem: cada uma pertence a um único
 agente, senão o roteamento seria ambíguo (há um teste que garante isso).
 
-| Agente | Domínio | Categorias | Cria evento? |
-|---|---|---|---|
-| **Secretária** 📅 | agenda, compromissos, lembretes, mensagens | `compromisso`, `lembrete`, `mensagem` | sim |
-| **Lifestyle** 🏠 | cardápio, compras, limpeza, rotina das crianças | `cardapio`, `compras`, `limpeza`, `rotina_familiar` | não |
-| **Financeira** 💰 | gastos e metas | `gasto`, `receita`, `meta` | não |
-| **Projetos e Carreira** 📋 | kanban, próximos passos, métricas | `tarefa`, `marco`, `metrica` | sim |
-| **Educacional** 🎓 | cronograma de estudos, material, flashcards | `estudo`, `material`, `flashcard` | sim |
+Os animais não representam páginas. Cada um representa uma **função cognitiva**
+da arquitetura, e é isso que faz a metáfora sustentar o sistema em vez de só
+decorá-lo.
 
-A orquestradora 🧭 é o sexto agente e mora em `agentes/_orquestradora.md`. O
-prefixo `_` a mantém fora do roteamento: ela decide para quem vai a mensagem,
-não recebe categoria nenhuma.
+| Agente | Função | Domínio | Categorias | Cria evento? |
+|---|---|---|---|---|
+| **Raposa** 🦊 | planejar | estratégia, projetos, metas, prioridades | `tarefa`, `marco`, `metrica` | sim |
+| **Abelha** 🐝 | fazer | rotinas, hábitos, limpeza, tarefas recorrentes | `limpeza`, `rotina` | não |
+| **Esquilo** 🐿️ | guardar | finanças, compras, estoque, patrimônio | `gasto`, `receita`, `meta`, `compras`, `estoque` | não |
+| **Cervo** 🦌 | cuidar | família, filhos, casa, alimentação, bem-estar | `cardapio`, `familia` | não |
+| **Elefante** 🐘 | lembrar | memória, documentos, histórico, estudo | `estudo`, `material`, `flashcard`, `documento` | sim |
+| **Beija-flor** 🐦 | avisar | calendário, lembretes, avisos, mensagens | `compromisso`, `lembrete`, `mensagem` | sim |
+
+A **Sábia** 🦉 é a sétima e mora em `agentes/_orquestradora.md`. O prefixo `_` a
+mantém fora do roteamento: ela compreende, consulta o contexto e decide para
+quem vai a mensagem, sem receber categoria nenhuma. O `nome:` dela continua
+`main`, que é o slot do agente principal no OpenClaw.
+
+### Como a Sábia fala
+
+Calma, observadora, prática e elegante. Sem urgência artificial e sem linguagem
+motivacional. A regra de tom vale para todos os agentes e está escrita na alma
+de cada um:
+
+> Em vez de "Você está atrasado em 17 tarefas", diga "Há 17 tarefas abertas.
+> Cinco merecem sua atenção esta semana."
 
 ```bash
 python -m sop agentes    # lista os agentes de domínio e seus domínios
@@ -204,14 +219,14 @@ python -m sop openclaw --verificar  # falha se alguém editou agentes/ sem reger
 
 | id | Papel | Tools |
 |---|---|---|
-| `main` | triagem e roteamento | `fs.read`, `grep`, `agent.invoke` |
-| `financeira` | dinheiro | `fs.read`, `fs.write` |
-| `projetos` | kanban | `fs.read`, `fs.write` |
-| `educacional` | estudos | `fs.read`, `fs.write`, `web.fetch` |
+| `main` | Sábia 🦉, compreender e despachar | `fs.read`, `grep`, `agent.invoke` |
+| `esquilo` | Esquilo 🐿️, guardar | `fs.read`, `fs.write` |
+| `raposa` | Raposa 🦊, planejar | `fs.read`, `fs.write` |
+| `elefante` | Elefante 🐘, lembrar | `fs.read`, `fs.write`, `web.fetch` |
 
-`secretaria` e `lifestyle` permanecem apenas no roteamento Python histórico,
-com `openclaw_ativo: false`; não são instaladas no OpenClaw. Agenda e rotina
-pessoal ou doméstica ficam com a `juliana-ops` na estrutura Sábia.
+`beija-flor`, `abelha` e `cervo` permanecem apenas no roteamento Python, com
+`openclaw_ativo: false`; não são instalados no OpenClaw. Agenda e rotina
+doméstica ficam com a `juliana-ops` na estrutura Sábia.
 
 A regra das tools é dar o menor conjunto que resolve o trabalho. `agent.invoke`
 existe só na orquestradora, porque delegação em especialista abre caminho para
@@ -545,13 +560,13 @@ Passo a passo do que acontece quando alguém escreve
 2. **Enfileiramento** — a mensagem entra na fila durável em disco. A pessoa
    recebe confirmação sem esperar o resto.
 3. **Classificação** — a camada de IA lê o texto e devolve, validado por JSON
-   Schema: agente `secretaria`, categoria `compromisso`, título
+   Schema: agente `beija-flor`, categoria `compromisso`, título
    "Reunião com o cliente", data `2026-09-03`, hora `14:00`.
 4. **Validação de roteamento** — a orquestradora confirma que o agente existe e
    que a categoria pertence a ele. Se o modelo alucinar um agente inexistente,
    o roteamento é resgatado pela categoria.
 5. **Registro** — o item é gravado no Notion com todas as propriedades.
-6. **Agendamento** — como tem data e a Secretária trabalha com agenda, um
+6. **Agendamento** — como tem data e o Beija-flor trabalha com agenda, um
    evento de 60 minutos é criado na Google Agenda.
 7. **Confirmação** — o sistema responde no Telegram dizendo o que entendeu,
    onde guardou e se algo precisa de confirmação.

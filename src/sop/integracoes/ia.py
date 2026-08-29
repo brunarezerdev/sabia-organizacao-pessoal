@@ -76,22 +76,27 @@ class AdaptadorIA(Protocol):
 
 # Ordem importa: a primeira categoria cujo padrão casar é a escolhida.
 PADROES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
-    ("financeira", "meta", (r"\bmeta\b", r"\bjuntar\b", r"\beconomizar\b", r"\bguardar\b.*\breais?\b")),
-    ("financeira", "receita", (r"\brecebi\b", r"\bentrou\b.*\bconta\b", r"\bsal[aá]rio\b", r"\bpagamento recebido\b")),
-    ("financeira", "gasto", (r"\bgastei\b", r"\bpaguei\b", r"\bcustou\b", r"r\$\s*\d", r"\bcomprei\b.*\bpor\b")),
-    ("educacional", "flashcard", (r"\bflashcard\b", r"\bcart[ãa]o de revis[ãa]o\b", r"\brevis[ãa]o espa[çc]ada\b")),
-    ("educacional", "material", (r"\bler\b.*\b(livro|artigo|apostila|cap[íi]tulo)\b", r"\bmaterial\b", r"\bapostila\b")),
-    ("educacional", "estudo", (r"\bestudar\b", r"\bestudo\b", r"\brevisar\b", r"\bdisciplina\b", r"\bprova\b")),
-    ("projetos", "metrica", (r"\bm[ée]trica\b", r"\bindicador\b", r"\bkpi\b")),
-    ("projetos", "marco", (r"\bentrega\b", r"\bmarco\b", r"\bdeadline\b", r"\bprazo final\b")),
-    ("projetos", "tarefa", (r"\bprojeto\b", r"\bkanban\b", r"\btarefa\b", r"\bpr[óo]ximo passo\b", r"\bcarreira\b")),
-    ("lifestyle", "compras", (r"\bcomprar\b", r"\bacabou\b", r"\blista de (compras|mercado)\b", r"\bfalta\b.*\bcasa\b", r"\bmercado\b")),
-    ("lifestyle", "cardapio", (r"\bcard[áa]pio\b", r"\bjantar\b", r"\balmo[çc]o\b", r"\breceita\b", r"\bcozinhar\b")),
-    ("lifestyle", "limpeza", (r"\blimpar\b", r"\bfaxina\b", r"\blavar\b", r"\barrumar a casa\b", r"\bpassar roupa\b")),
-    ("lifestyle", "rotina_familiar", (r"\bcrian[çc]as?\b", r"\bescola\b", r"\brotina da casa\b", r"\bfilhos?\b")),
-    ("secretaria", "mensagem", (r"\bresponder\b", r"\bretornar (a )?liga[çc][ãa]o\b", r"\bmandar mensagem\b", r"\bavisar\b")),
-    ("secretaria", "lembrete", (r"\blembrar\b", r"\blembrete\b", r"\bn[ãa]o esquecer\b")),
-    ("secretaria", "compromisso", (r"\breuni[ãa]o\b", r"\bconsulta\b", r"\bcompromisso\b", r"\bmarcar\b", r"\bencontro\b", r"\bagendar\b")),
+    ("esquilo", "meta", (r"\bmeta\b", r"\bjuntar\b", r"\beconomizar\b", r"\bguardar\b.*\breais?\b")),
+    ("esquilo", "receita", (r"\brecebi\b", r"\bentrou\b.*\bconta\b", r"\bsal[aá]rio\b", r"\bpagamento recebido\b")),
+    ("esquilo", "gasto", (r"\bgastei\b", r"\bpaguei\b", r"\bcustou\b", r"r\$\s*\d", r"\bcomprei\b.*\bpor\b")),
+    ("elefante", "flashcard", (r"\bflashcard\b", r"\bcart[ãa]o de revis[ãa]o\b", r"\brevis[ãa]o espa[çc]ada\b")),
+    ("elefante", "material", (r"\bler\b.*\b(livro|artigo|apostila|cap[íi]tulo)\b", r"\bmaterial\b", r"\bapostila\b")),
+    ("elefante", "documento", (r"\bdocumento\b", r"\bgarantia\b", r"\bcontrato\b", r"\bcertid[ãa]o\b", r"\bcomprovante\b")),
+    ("elefante", "estudo", (r"\bestudar\b", r"\bestudo\b", r"\brevisar\b", r"\bdisciplina\b", r"\bprova\b")),
+    ("raposa", "metrica", (r"\bm[ée]trica\b", r"\bindicador\b", r"\bkpi\b")),
+    ("raposa", "marco", (r"\bentrega\b", r"\bmarco\b", r"\bdeadline\b", r"\bprazo final\b")),
+    ("raposa", "tarefa", (r"\bprojeto\b", r"\bkanban\b", r"\btarefa\b", r"\bpr[óo]ximo passo\b", r"\bcarreira\b")),
+    ("esquilo", "compras", (r"\bcomprar\b", r"\bacabou\b", r"\blista de (compras|mercado)\b", r"\bfalta\b.*\bcasa\b", r"\bmercado\b")),
+    # `estoque` vem depois de `compras` de propósito: "acabou o café" é um
+    # pedido de reposição, não uma leitura da despensa.
+    ("esquilo", "estoque", (r"\bdespensa\b", r"\bestoque\b", r"\brepor\b", r"\bquantidade m[íi]nima\b")),
+    ("cervo", "cardapio", (r"\bcard[áa]pio\b", r"\bjantar\b", r"\balmo[çc]o\b", r"\breceita\b", r"\bcozinhar\b")),
+    ("abelha", "limpeza", (r"\blimpar\b", r"\bfaxina\b", r"\blavar\b", r"\barrumar a casa\b", r"\bpassar roupa\b")),
+    ("cervo", "familia", (r"\bcrian[çc]as?\b", r"\bescola\b", r"\bfilhos?\b", r"\bpediatra\b")),
+    ("abelha", "rotina", (r"\brotina\b", r"\bh[áa]bito\b", r"\btodo dia\b", r"\btoda (semana|manh[ãa]|noite)\b", r"\bcheck ?list\b")),
+    ("beija-flor", "mensagem", (r"\bresponder\b", r"\bretornar (a )?liga[çc][ãa]o\b", r"\bmandar mensagem\b", r"\bavisar\b")),
+    ("beija-flor", "lembrete", (r"\blembrar\b", r"\blembrete\b", r"\bn[ãa]o esquecer\b")),
+    ("beija-flor", "compromisso", (r"\breuni[ãa]o\b", r"\bconsulta\b", r"\bcompromisso\b", r"\bmarcar\b", r"\bencontro\b", r"\bagendar\b")),
 )
 
 _VALOR = re.compile(r"r\$\s*([\d.]+,\d{2}|[\d.]+)", re.IGNORECASE)
@@ -137,7 +142,7 @@ class ClassificadorHeuristico:
         hoje = hoje or date.today()
         minusculo = texto.lower()
 
-        agente, categoria, confianca = "secretaria", "lembrete", 0.3
+        agente, categoria, confianca = "beija-flor", "lembrete", 0.3
         for nome_agente, nome_categoria, padroes in PADROES:
             if any(re.search(p, minusculo) for p in padroes):
                 agente, categoria, confianca = nome_agente, nome_categoria, 0.7
@@ -145,10 +150,10 @@ class ClassificadorHeuristico:
 
         data = resolver_data(texto, hoje)
         hora = resolver_hora(texto) if data else None
-        valor = extrair_valor(texto) if agente == "financeira" else None
+        valor = extrair_valor(texto) if agente == "esquilo" else None
 
-        # Regra do agente Financeira: sem valor explícito, ninguém adivinha.
-        precisa_confirmacao = agente == "financeira" and categoria in ("gasto", "receita") and valor is None
+        # Regra do Esquilo: sem valor explícito, ninguém adivinha.
+        precisa_confirmacao = agente == "esquilo" and categoria in ("gasto", "receita") and valor is None
 
         return Classificacao(
             agente=agente,
@@ -158,7 +163,7 @@ class ClassificadorHeuristico:
             hora=hora,
             duracao_minutos=60 if categoria == "compromisso" and hora else None,
             valor=valor,
-            estado="backlog" if agente == "projetos" and categoria == "tarefa" else None,
+            estado="backlog" if agente == "raposa" and categoria == "tarefa" else None,
             observacao="" if len(texto) <= 80 else texto.strip(),
             precisa_confirmacao=precisa_confirmacao,
             confianca=confianca,
@@ -203,7 +208,7 @@ INSTRUCAO_BASE = carregar_instrucao_base()
 def montar_catalogo(registro: Any) -> str:
     """Descreve os agentes disponíveis para o modelo."""
     if registro is None:
-        return "- secretaria, lifestyle, financeira, projetos, educacional"
+        return "- raposa, abelha, esquilo, cervo, elefante, beija-flor"
     return "\n".join(
         f"- {agente.nome} ({agente.dominio}) — categorias: {', '.join(agente.categorias)}"
         for agente in registro
@@ -263,10 +268,10 @@ class _BaseClassificador:
         # Se o modelo devolver um agente que não existe, resolve pela categoria.
         if registro is not None and agente not in registro:
             pela_categoria = registro.por_categoria(categoria)
-            agente = pela_categoria.nome if pela_categoria else "secretaria"
+            agente = pela_categoria.nome if pela_categoria else "beija-flor"
 
         return Classificacao(
-            agente=agente or "secretaria",
+            agente=agente or "beija-flor",
             categoria=categoria or "lembrete",
             titulo=str(dados.get("titulo", "")).strip() or "(sem título)",
             data=normalizar_data(dados.get("data"), hoje),
