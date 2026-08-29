@@ -83,7 +83,7 @@ def test_sem_integracao_configurada_ainda_classifica(registro):
     """Sem Notion e sem Agenda, o fluxo roda e devolve a classificação."""
     resultado = montar(registro).executar(Mensagem(id="m6", texto="Estudar amanhã"))
 
-    assert resultado.classificacao.agente == "elefante"
+    assert resultado.classificacao.agente == "borboleta"
     assert resultado.id_no_banco is None
     assert resultado.sucesso  # não gravar não é erro quando não há destino
 

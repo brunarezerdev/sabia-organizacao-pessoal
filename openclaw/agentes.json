@@ -29,15 +29,28 @@
   },
   "subagentes": [
     {
-      "id": "elefante",
-      "nome": "Elefante",
-      "emoji": "🐘",
-      "descricao": "memória, documentos, histórico, estudo e material de referência",
+      "id": "borboleta",
+      "nome": "Borboleta",
+      "emoji": "🦋",
+      "descricao": "educação, estudos, hábitos de aprendizado, cursos, leituras e desenvolvimento pessoal",
       "modelo": "openai/gpt-5.5",
       "tools": [
         "fs.read",
         "fs.write",
         "web.fetch"
+      ],
+      "workspace": "~/.openclaw/workspace-borboleta",
+      "alma": "openclaw/workspaces/borboleta/SOUL.md"
+    },
+    {
+      "id": "elefante",
+      "nome": "Elefante",
+      "emoji": "🐘",
+      "descricao": "memória, documentos, histórico e registros",
+      "modelo": "openai/gpt-5.5",
+      "tools": [
+        "fs.read",
+        "fs.write"
       ],
       "workspace": "~/.openclaw/workspace-elefante",
       "alma": "openclaw/workspaces/elefante/SOUL.md"

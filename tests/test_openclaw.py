@@ -33,12 +33,13 @@ def declaracao(registro):
 # -- declaração --------------------------------------------------------------
 
 
-def test_declara_a_orquestradora_e_os_tres_agentes_ativos(declaracao):
+def test_declara_a_orquestradora_e_os_quatro_agentes_ativos(declaracao):
     assert declaracao.principal.id == "main"
     assert {p.id for p in declaracao.subagentes} == {
         "esquilo",
         "raposa",
         "elefante",
+        "borboleta",
     }
 
 
@@ -51,7 +52,7 @@ def test_a_sabia_e_a_orquestradora_e_nao_vira_agente_de_dominio(registro):
     from sop.agentes import carregar_orquestradora
 
     assert "main" not in registro
-    assert len(registro) == 6
+    assert len(registro) == 7
 
     sabia = carregar_orquestradora(RAIZ / "agentes")
     assert sabia.titulo == "Sábia"
@@ -59,11 +60,10 @@ def test_a_sabia_e_a_orquestradora_e_nao_vira_agente_de_dominio(registro):
 
 
 def test_agentes_desativados_continuam_no_roteamento_sem_irem_ao_openclaw(registro, declaracao):
-    assert {"beija-flor", "abelha", "cervo"} <= set(registro.nomes())
+    desativados = {"beija-flor", "abelha", "cervo"}
+    assert desativados <= set(registro.nomes())
     declarados = {perfil.id for perfil in declaracao.subagentes}
-    assert "beija-flor" not in declarados
-    assert "abelha" not in declarados
-    assert "cervo" not in declarados
+    assert not (desativados & declarados)
 
 
 def test_cada_agente_tem_workspace_proprio(declaracao):
@@ -168,8 +168,24 @@ def test_alma_da_orquestradora_resolve_os_marcadores(registro):
 def test_alma_declara_as_tools_do_agente(registro, declaracao):
     perfil = next(p for p in declaracao.subagentes if p.id == "elefante")
     alma = oc.montar_alma(registro.obter("elefante"), perfil, registro)
-    assert "web.fetch" in alma
+    assert "fs.write" in alma
     assert "shell.exec" not in alma
+
+
+def test_web_fetch_acompanhou_o_estudo_ate_a_borboleta(registro, declaracao):
+    """A tool segue o escopo: quem abre material da web é quem estuda.
+
+    O Elefante tinha `web.fetch` para buscar material de estudo. O estudo foi
+    para a Borboleta em 29/08/2026, e a tool foi junto — o Elefante ficou com o
+    conjunto mínimo de quem só arquiva.
+    """
+    borboleta = next(p for p in declaracao.subagentes if p.id == "borboleta")
+    assert "web.fetch" in borboleta.tools
+    assert borboleta.emoji == "🦋"
+
+    elefante = registro.obter("elefante")
+    assert "web.fetch" not in elefante.tools
+    assert set(elefante.tools) == {"fs.read", "fs.write"}
 
 
 def test_geracao_e_deterministica(registro):

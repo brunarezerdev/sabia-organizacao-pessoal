@@ -96,8 +96,13 @@ def test_titulo_longo_e_truncado():
         ("Projeto do portfólio: escrever a home", "raposa", "tarefa"),
         ("Entrega do relatório em 30/09", "raposa", "marco"),
         ("Guardar a garantia da geladeira", "elefante", "documento"),
-        ("Estudar integração de APIs na sexta", "elefante", "estudo"),
-        ("Ler o artigo sobre agentes", "elefante", "material"),
+        ("Registrar a decisão de trocar de banco", "elefante", "registro"),
+        ("Estudar integração de APIs na sexta", "borboleta", "estudo"),
+        ("Ler o artigo sobre agentes", "borboleta", "material"),
+        ("Curso de análise de dados começa em abril", "borboleta", "curso"),
+        ("Fazer flashcard de anatomia", "borboleta", "flashcard"),
+        ("Criar um hábito de aprendizado", "borboleta", "aprendizado"),
+        ("Quero aprender italiano", "borboleta", "aprendizado"),
     ],
 )
 def test_heuristica_roteia_para_o_agente_certo(texto, agente, categoria, registro):

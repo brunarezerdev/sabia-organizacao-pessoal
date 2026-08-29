@@ -15,7 +15,7 @@ orquestradora.
 `elefante`, `esquilo` e `raposa` continuam preservados em `openclaw/agentes.json` (eram
 `educacional`, `financeira` e `projetos` antes da adoção da identidade da Sábia, em 29/08/2026).
 `beija-flor`, `abelha` e `cervo` ficam fora do OpenClaw desde 26/08/2026, e suas funções operacionais
-passaram para a `juliana-ops`.
+passaram para a `juliana-ops`. A `borboleta`, criada em 29/08/2026, entra como o quarto subagente.
 
 ## A orquestradora
 

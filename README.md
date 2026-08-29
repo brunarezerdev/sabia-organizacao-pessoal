@@ -39,13 +39,13 @@ uma dessas coisas mora em um app diferente. O custo de decidir *onde* registrar
 
 A solução é inverter a responsabilidade: **a pessoa despeja o pensamento em um
 canal só e o sistema faz a triagem.** Uma camada de IA lê a mensagem, decide
-qual dos seis agentes especializados cuida daquilo, extrai os campos
+qual dos sete agentes especializados cuida daquilo, extrai os campos
 estruturados (data, hora, valor, projeto, disciplina) e grava no lugar certo.
 
 O que o sistema entrega:
 
 - **Captura sem fricção** — Telegram, que a pessoa já tem aberto.
-- **Classificação automática** — seis funções cognitivas, um agente cada.
+- **Classificação automática** — sete funções cognitivas, um agente cada.
 - **Registro estruturado** — Notion, que a pessoa consegue abrir e editar.
 - **Agendamento automático** — o que tem data vira evento na Google Agenda.
 - **Painel de acompanhamento** — a própria database do Notion, com filtros por
@@ -182,13 +182,17 @@ decorá-lo.
 | **Abelha** 🐝 | fazer | rotinas, hábitos, limpeza, tarefas recorrentes | `limpeza`, `rotina` | não |
 | **Esquilo** 🐿️ | guardar | finanças, compras, estoque, patrimônio | `gasto`, `receita`, `meta`, `compras`, `estoque` | não |
 | **Cervo** 🦌 | cuidar | família, filhos, casa, alimentação, bem-estar | `cardapio`, `familia` | não |
-| **Elefante** 🐘 | lembrar | memória, documentos, histórico, estudo | `estudo`, `material`, `flashcard`, `documento` | sim |
+| **Elefante** 🐘 | lembrar | memória, documentos, histórico, registros | `documento`, `registro` | não |
+| **Borboleta** 🦋 | crescer | educação, estudos, hábitos de aprendizado, cursos, leituras, desenvolvimento pessoal | `estudo`, `material`, `flashcard`, `curso`, `aprendizado` | sim |
 | **Beija-flor** 🐦 | avisar | calendário, lembretes, avisos, mensagens | `compromisso`, `lembrete`, `mensagem` | sim |
 
-A **Sábia** 🦉 é a sétima e mora em `agentes/_orquestradora.md`. O prefixo `_` a
+A **Sábia** 🦉 é a oitava e mora em `agentes/_orquestradora.md`. O prefixo `_` a
 mantém fora do roteamento: ela compreende, consulta o contexto e decide para
 quem vai a mensagem, sem receber categoria nenhuma. O `nome:` dela continua
 `main`, que é o slot do agente principal no OpenClaw.
+
+O **efeito borboleta** citado em `regras.py` e no ritual semanal é outra coisa:
+é o encadeamento se-então entre compromissos, não a agente Borboleta 🦋.
 
 ### Como a Sábia fala
 
@@ -222,7 +226,8 @@ python -m sop openclaw --verificar  # falha se alguém editou agentes/ sem reger
 | `main` | Sábia 🦉, compreender e despachar | `fs.read`, `grep`, `agent.invoke` |
 | `esquilo` | Esquilo 🐿️, guardar | `fs.read`, `fs.write` |
 | `raposa` | Raposa 🦊, planejar | `fs.read`, `fs.write` |
-| `elefante` | Elefante 🐘, lembrar | `fs.read`, `fs.write`, `web.fetch` |
+| `elefante` | Elefante 🐘, lembrar | `fs.read`, `fs.write` |
+| `borboleta` | Borboleta 🦋, crescer | `fs.read`, `fs.write`, `web.fetch` |
 
 `beija-flor`, `abelha` e `cervo` permanecem apenas no roteamento Python, com
 `openclaw_ativo: false`; não são instalados no OpenClaw. Agenda e rotina

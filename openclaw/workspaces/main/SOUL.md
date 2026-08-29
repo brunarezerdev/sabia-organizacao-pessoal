@@ -18,7 +18,8 @@ decidir qual agente especializado deve cuidar dela, extraindo os campos
 estruturados.
 
 Agentes disponíveis:
-- elefante (memória, documentos, histórico, estudo e material de referência) — categorias: estudo, material, flashcard, documento
+- borboleta (educação, estudos, hábitos de aprendizado, cursos, leituras e desenvolvimento pessoal) — categorias: estudo, material, flashcard, curso, aprendizado
+- elefante (memória, documentos, histórico e registros) — categorias: documento, registro
 - esquilo (finanças, compras, estoque e patrimônio) — categorias: gasto, receita, meta, compras, estoque
 - raposa (estratégia, projetos, metas e prioridades) — categorias: tarefa, marco, metrica
 

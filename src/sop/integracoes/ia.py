@@ -79,10 +79,15 @@ PADROES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("esquilo", "meta", (r"\bmeta\b", r"\bjuntar\b", r"\beconomizar\b", r"\bguardar\b.*\breais?\b")),
     ("esquilo", "receita", (r"\brecebi\b", r"\bentrou\b.*\bconta\b", r"\bsal[aá]rio\b", r"\bpagamento recebido\b")),
     ("esquilo", "gasto", (r"\bgastei\b", r"\bpaguei\b", r"\bcustou\b", r"r\$\s*\d", r"\bcomprei\b.*\bpor\b")),
-    ("elefante", "flashcard", (r"\bflashcard\b", r"\bcart[ãa]o de revis[ãa]o\b", r"\brevis[ãa]o espa[çc]ada\b")),
-    ("elefante", "material", (r"\bler\b.*\b(livro|artigo|apostila|cap[íi]tulo)\b", r"\bmaterial\b", r"\bapostila\b")),
+    ("borboleta", "flashcard", (r"\bflashcard\b", r"\bcart[ãa]o de revis[ãa]o\b", r"\brevis[ãa]o espa[çc]ada\b")),
+    ("borboleta", "material", (r"\bler\b.*\b(livro|artigo|apostila|cap[íi]tulo)\b", r"\bmaterial\b", r"\bapostila\b")),
+    ("borboleta", "curso", (r"\bcurso\b", r"\bmatr[íi]cula\b", r"\bmatricular\b", r"\bcertifica[çc][ãa]o\b", r"\bforma[çc][ãa]o\b", r"\bgradua[çc][ãa]o\b")),
+    ("borboleta", "aprendizado", (r"\bdesenvolvimento pessoal\b", r"\baprend(er|izado|izagem)\b", r"\bh[áa]bito(s)? de (estudo|leitura|aprendizado)\b")),
     ("elefante", "documento", (r"\bdocumento\b", r"\bgarantia\b", r"\bcontrato\b", r"\bcertid[ãa]o\b", r"\bcomprovante\b")),
-    ("elefante", "estudo", (r"\bestudar\b", r"\bestudo\b", r"\brevisar\b", r"\bdisciplina\b", r"\bprova\b")),
+    # `registro` é decisão tomada e histórico, não anotação em geral: os padrões
+    # são estreitos de propósito para não engolir o resto do roteamento.
+    ("elefante", "registro", (r"\bdecis[ãa]o\b", r"\bdecidimos\b", r"\bficou decidido\b", r"\bhist[óo]rico\b")),
+    ("borboleta", "estudo", (r"\bestudar\b", r"\bestudo\b", r"\brevisar\b", r"\bdisciplina\b", r"\bprova\b")),
     ("raposa", "metrica", (r"\bm[ée]trica\b", r"\bindicador\b", r"\bkpi\b")),
     ("raposa", "marco", (r"\bentrega\b", r"\bmarco\b", r"\bdeadline\b", r"\bprazo final\b")),
     ("raposa", "tarefa", (r"\bprojeto\b", r"\bkanban\b", r"\btarefa\b", r"\bpr[óo]ximo passo\b", r"\bcarreira\b")),
@@ -208,7 +213,7 @@ INSTRUCAO_BASE = carregar_instrucao_base()
 def montar_catalogo(registro: Any) -> str:
     """Descreve os agentes disponíveis para o modelo."""
     if registro is None:
-        return "- raposa, abelha, esquilo, cervo, elefante, beija-flor"
+        return "- raposa, abelha, esquilo, cervo, elefante, borboleta, beija-flor"
     return "\n".join(
         f"- {agente.nome} ({agente.dominio}) — categorias: {', '.join(agente.categorias)}"
         for agente in registro
