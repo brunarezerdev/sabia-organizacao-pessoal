@@ -1,6 +1,8 @@
-# Sistema Operacional Pessoal
+# Sábia
 
-Um sistema de organização pessoal em que a pessoa escreve uma frase em
+**Inteligência para cultivar a vida.**
+
+Sábia é um sistema de organização pessoal em que a pessoa escreve uma frase em
 linguagem natural no Telegram e o sistema decide sozinho o que aquilo é, onde
 guardar e se vira compromisso na agenda.
 
@@ -425,8 +427,8 @@ usar o provedor de IA de verdade — ver a seção acima.
 ### 1. Instalar
 
 ```bash
-git clone <url-do-repositorio>
-cd sop-pessoal
+git clone https://github.com/brunarezerdev/sabia-organizacao-pessoal.git
+cd sabia-organizacao-pessoal
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -680,7 +682,7 @@ chamada.
 python -m pytest
 ```
 
-**159 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
+**241 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
 substituídas por sessões HTTP falsas e o cliente da Anthropic por um duplo que
 registra os parâmetros recebidos.
 
@@ -749,7 +751,7 @@ _Print do `python -m sop diagnostico` com as quatro integrações prontas._
 
 <!-- ![Testes](docs/prints/05-testes.png) -->
 
-_Print do `python -m pytest` com os 159 testes verdes._
+_Print do `python -m pytest` com os 241 testes verdes._
 
 ### 6. Painel de acompanhamento
 
