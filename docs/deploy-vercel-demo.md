@@ -1,48 +1,50 @@
-# Publicar o dashboard DEMO na Vercel
+# Dashboard DEMO na Vercel
 
-O código está pronto e verificado contra as bases DEMO de verdade. O que falta é
-uma credencial que não existe nesta VPS, e por isso a publicação depende de
-alguns cliques da Bruna.
+**No ar:** <https://sabia-dashboard-demo.vercel.app>
 
-## Por que parou aqui
+Publicado em 30/08/2026 com o token que a Bruna mandou. O painel está público,
+embutido no Celeiro › Finanças, e roda em **modo snapshot** — dados fictícios
+que vêm do arquivo, sem tocar no Notion. É o suficiente para o vídeo pitch.
 
-`VERCEL_TOKEN` e `VERCEL_SCOPE` existem no ambiente e nos arquivos `.env` da
-operação, mas os dois estão **vazios** (`len=0`). A CLI da Vercel não está
-instalada e nunca houve `vercel login` (não existe `auth.json` em
-`~/.local/share/com.vercel.cli/`). A API responde `403 missing authentication
-token`. Não há projeto Vercel vinculado a nenhum repositório da operação.
+A leitura ao vivo das bases DEMO continua desligada de propósito: falta a
+integração Notion separada, que só a Bruna pode criar. Passo a passo em
+[Ligar a leitura ao vivo](#ligar-a-leitura-ao-vivo).
 
-Ou seja: não é bug, é credencial ausente. Nada de deploy foi tentado às cegas.
+## O que está no ar
 
-## O que já foi verificado por aqui
+| | |
+| --- | --- |
+| URL pública | <https://sabia-dashboard-demo.vercel.app> |
+| Projeto Vercel | `sabia-dashboard-demo`, escopo `brunarezerdevs-projects` |
+| Variáveis em Production | só `SABIA_DEMO=1` |
+| Origem dos dados | `dashboard/data.json` (snapshot fictício) |
+| Selo no topo | `AMBIENTE DEMO · DADOS FICTÍCIOS`, permanente |
 
-Sem a URL pública dá para provar quase tudo, e foi provado: um servidor local
-espelha os cabeçalhos do `vercel.json` e roda o mesmo `api/dashboard.py` que vai
-para produção.
+O canto direito do cabeçalho mostra **`Modo offline · snapshot`**. Hoje isso é o
+estado esperado, não um defeito: sem `NOTION_TOKEN` a função responde 503 e a
+página cai no snapshot de reserva. Quando a leitura ao vivo for ligada, esse
+texto vira `Última atualização: <hora>`.
 
-- O endpoint lê as três bases DEMO reais e devolve 5 lançamentos, 2 custos e
-  2 orçamentos, todos rotulados `DEMO —` e datados em 2035.
-- `POST`, `PUT`, `PATCH` e `DELETE` respondem **405** com `Allow: GET`.
-- Sem `SABIA_DEMO=1` o endpoint responde **503** com mensagem genérica, sem
-  vazar token, id de base ou erro cru do Notion.
-- Linha com `Dados de demonstração` desmarcado, nulo ou ausente é descartada.
-- Num Chromium de verdade, com a CSP de produção aplicada, uma página servida
-  na origem `https://www.notion.so` **carrega o dashboard dentro de um iframe**;
-  uma origem não autorizada leva `ERR_BLOCKED_BY_RESPONSE`. O `frame-ancestors`
-  está correto para o embed.
+O projeto `sabia-app`, que já existia na mesma conta, **não foi tocado**. Este é
+um projeto novo e separado.
 
-Duas correções saíram dessa verificação e já estão no repositório:
+As URLs por deploy (`sabia-dashboard-demo-<hash>-…vercel.app`) ficam atrás do
+login da Vercel; a que é pública, e a que deve ser usada em qualquer lugar, é a
+URL limpa acima.
 
-1. As barras dos dois gráficos usavam `style="width:…"`. A CSP de produção tem
-   `style-src 'self'` sem `'unsafe-inline'`, que **descarta estilo inline** — em
-   produção toda barra apareceria do mesmo tamanho. A largura passou a ser
-   aplicada via CSSOM, que a CSP permite. Sob a CSP de produção o console agora
-   registra zero violações.
-2. `.track i` ganhou `width:0` no CSS. Se a largura falhar de novo, a barra
-   aparece vazia em vez de aparecer cheia — num gráfico financeiro, falhar
-   visível é melhor que falhar mentindo.
+### Sobre o que sobe para a Vercel
 
-## Antes de tudo: crie uma integração Notion separada
+A raiz do repositório tem `.env` com credenciais reais em uso (Telegram, Notion
+das bases pessoais, OpenAI, Anthropic) e `backups/` com dumps do Notion. O
+`.vercelignore` é uma **lista de permissão**: tudo na raiz fica de fora e só
+voltam `api/`, `dashboard/` e `vercel.json`. Arquivo sensível novo na raiz já
+nasce excluído, sem ninguém precisar lembrar de adicionar.
+
+## Ligar a leitura ao vivo
+
+Faltam dois passos: um da Bruna, outro da Ária.
+
+### Passo 1 — Bruna: criar a integração (5 minutos)
 
 ⚠️ **Não reaproveite o token que está na VPS.** Aquele token enxerga as bases
 pessoais reais (`NOTION_DATABASE_ID`, cardápio, receitas, ingredientes). Colocar
@@ -50,86 +52,96 @@ ele num projeto público significa que um vazamento na Vercel daria leitura das
 bases reais, mesmo que este código só consulte as três bases DEMO.
 
 1. Abra <https://www.notion.so/profile/integrations> e clique em **New integration**.
-2. Nome: `Sabia DEMO publico`. Capabilities: deixe **só "Read content"**.
+2. Nome: `Sabia DEMO publico`. Em Capabilities deixe **só "Read content"**.
    Desmarque "Update content" e "Insert content".
 3. Copie o **Internal Integration Secret**.
 4. Abra cada uma das três bases DEMO (Lançamentos, Custos fixos, Orçamento),
    menu `...` → **Connections** → **Connect to** → `Sabia DEMO publico`.
    Conecte **apenas essas três**. Nenhuma base real.
+5. Mande o secret para a Ária. Os três ids ela levanta sozinha; se preferir
+   mandar, abra a base → `...` → **Copy link**: o id é a sequência de 32
+   caracteres depois da última barra e antes do `?`.
 
-## Publicar
+### Passo 2 — Ária: publicar as variáveis e redeployar
 
-1. Entre em <https://vercel.com/new> com a conta do GitHub `brunarezerdev`.
-2. **Import Git Repository** → `brunarezerdev/sabia-organizacao-pessoal`.
-   O repositório é privado: na primeira vez a Vercel vai pedir para você
-   autorizar o app do GitHub e liberar o acesso a ele.
-3. Framework Preset: **Other**. Root Directory: deixe a raiz (`./`).
-   Não mude Build Command nem Output Directory: o `vercel.json` do repositório
-   já define `outputDirectory: dashboard` e a função `api/dashboard.py`.
-4. Abra **Environment Variables** e adicione as cinco abaixo, todas em
-   **Production** (e em Preview, se quiser testar antes de promover):
+Com o secret em mãos, é isto, na raiz do repositório. Os valores entram por
+`stdin` para não ficarem no histórico do shell.
 
-   | Nome | Valor |
-   | --- | --- |
-   | `SABIA_DEMO` | `1` |
-   | `NOTION_TOKEN` | o secret da integração `Sabia DEMO publico` |
-   | `NOTION_LANCAMENTOS_DEMO_ID` | id da base `DEMO — Lançamentos financeiros` |
-   | `NOTION_CUSTOS_DEMO_ID` | id da base `DEMO — Custos fixos e assinaturas` |
-   | `NOTION_ORCAMENTO_DEMO_ID` | id da base `DEMO — Orçamento por categoria` |
-
-   Os três ids não entram neste repositório de propósito — ele pode se tornar
-   público. Peça para a Ária te mandar os valores, ou pegue você mesma: abra a
-   base no Notion, `...` → **Copy link**, e o id é a sequência de 32 caracteres
-   depois da última barra e antes do `?`.
-
-5. **Deploy**. O primeiro build leva cerca de um minuto.
-
-## Conferir depois do deploy
-
-Trocando `<url>` pela URL que a Vercel devolver:
-
-- Abra a URL e confirme o selo **AMBIENTE DEMO · DADOS FICTÍCIOS** no topo, e
-  que as barras dos dois gráficos têm tamanhos diferentes entre si.
-- Se o canto direito do cabeçalho disser `Modo offline · snapshot`, a função não
-  está alcançando o Notion: revise as cinco variáveis de ambiente. A página
-  continua abrindo porque existe um snapshot fictício de reserva, então esse
-  aviso é o único sinal de que a leitura ao vivo falhou.
-- Cabeçalhos (use GET; `curl -I` manda `HEAD`, que a função não implementa):
-
-  ```bash
-  curl -s -D- -o /dev/null https://<url>/api/dashboard | grep -i content-security-policy
-  ```
-
-  Precisa conter `frame-ancestors https://www.notion.so https://notion.so`.
-  O cabeçalho aparece duas vezes, uma posta pelo `vercel.json` e outra pela
-  função. Os dois valores são idênticos, então a política vale igual.
-
-- Escrita recusada:
-
-  ```bash
-  curl -s -o /dev/null -w '%{http_code}\n' -X POST https://<url>/api/dashboard
-  ```
-
-  Precisa responder `405`.
-
-## Incorporar no Celeiro › Finanças
-
-Com a URL no ar, quem fecha é o script — não faça na mão:
+Os caminhos concretos do token da Vercel e da CLI **não moram neste arquivo**:
+este repositório pode se tornar público, e caminho absoluto de host entrega a
+estrutura da VPS sem servir para mais nada. Eles estão nas notas de operação da
+Ária, em `data/vercel-sabia-demo.md`, fora do repositório.
 
 ```bash
-python3 scripts/embutir_dashboard_notion.py https://<url>
+export VERCEL_TOKEN="$(cat "$CAMINHO_DO_TOKEN")"
+VC="vercel --token $VERCEL_TOKEN --scope brunarezerdevs-projects"
+
+printf '%s' '<SECRET_DA_INTEGRACAO>' | $VC env add NOTION_TOKEN production
+printf '%s' '<ID_LANCAMENTOS>'       | $VC env add NOTION_LANCAMENTOS_DEMO_ID production
+printf '%s' '<ID_CUSTOS>'            | $VC env add NOTION_CUSTOS_DEMO_ID production
+printf '%s' '<ID_ORCAMENTO>'         | $VC env add NOTION_ORCAMENTO_DEMO_ID production
+
+# Variável nova só vale no build seguinte. Sem este passo, nada muda.
+$VC deploy --prod --yes
+```
+
+Conferir se pegou:
+
+```bash
+curl -s https://sabia-dashboard-demo.vercel.app/api/dashboard | head -c 200
+```
+
+Tem que sair o JSON com `"ambiente":"DEMO"` e a lista de lançamentos, **não**
+`{"erro":"Dados temporariamente indisponíveis."}`. Na página, o cabeçalho troca
+`Modo offline · snapshot` por `Última atualização: <hora>`.
+
+Se continuar em 503, o motivo está no log da função (`$VC logs`): a função nunca
+devolve detalhe de erro para o browser, de propósito.
+
+## Conferir o que está no ar
+
+```bash
+U=https://sabia-dashboard-demo.vercel.app
+
+# selo permanente
+curl -s $U/ | grep -o 'AMBIENTE DEMO · DADOS FICTÍCIOS'
+
+# frame-ancestors, necessário para o embed abrir dentro do Notion
+curl -s -D- -o /dev/null $U/ | grep -i content-security-policy
+
+# escrita recusada
+curl -s -o /dev/null -w '%{http_code}\n' -X POST $U/api/dashboard   # 405
+```
+
+Use GET: `curl -I` manda HEAD, que a função não implementa.
+
+No navegador, confira que as barras dos dois gráficos têm **tamanhos diferentes
+entre si**. Se todas aparecerem iguais (ou todas vazias), a CSP voltou a
+descartar a largura — veja a nota sobre CSSOM em `dashboard/app.js`.
+
+## Embed no Celeiro › Finanças
+
+Já feito. Quem refaz é o script, nunca na mão:
+
+```bash
+python3 scripts/embutir_dashboard_notion.py https://sabia-dashboard-demo.vercel.app
+python3 scripts/embutir_dashboard_notion.py --conferir https://sabia-dashboard-demo.vercel.app
 ```
 
 Ele faz backup da página em `backups/` antes de tocar em qualquer coisa, insere
 o dashboard como bloco `embed` logo abaixo do título, move os links diretos das
 bases para um toggle discreto chamado **Abrir as bases direto no Notion**,
-arquiva a lista seca antiga e no fim relê a página para conferir o resultado.
-Rodar de novo não duplica nada, e rodar com uma URL nova só atualiza o embed.
+arquiva a lista seca antiga e no fim relê a página para conferir. Rodar de novo
+não duplica nada, e rodar com URL nova só atualiza o embed. Não toca em ícone,
+capa, imagem nem nas três bases DEMO.
 
-Para só auditar o estado, sem alterar:
+A lista antiga foi **arquivada**, não apagada: continua recuperável na lixeira do
+Notion, e os mesmos links seguem na página dentro do toggle.
 
-```bash
-python3 scripts/embutir_dashboard_notion.py --conferir https://<url>
+Estado atual da página, conferido pela API:
+
+```
+heading_2 › embed › toggle › paragraph › child_database × 3 › callout
 ```
 
 ## O que o endpoint garante
@@ -145,3 +157,12 @@ Está em `api/dashboard.py` e coberto por `tests/test_api_dashboard.py`:
   nunca entra no repositório, nunca viaja na URL.
 - Só biblioteca padrão: `api/requirements.txt` está vazio de propósito para o
   bundle público não arrastar `requests`, `google-auth` nem `mcp`.
+
+## Pendências
+
+- **Deploy automático no push está desligado.** O projeto não está conectado ao
+  repositório do GitHub, porque conectar exige a Bruna autorizar o app da Vercel
+  na conta dela. Hoje todo deploy é manual (`vercel deploy --prod --yes`). Para
+  ligar: <https://vercel.com/brunarezerdevs-projects/sabia-dashboard-demo/settings/git>
+  → **Connect Git Repository** → `brunarezerdev/sabia-organizacao-pessoal`.
+- **Leitura ao vivo**, conforme a seção acima.

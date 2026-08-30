@@ -1,0 +1,23 @@
+# Lista de permissão: só a superfície pública sobe para a Vercel.
+#
+# A raiz deste repositório tem `.env` com credenciais reais em uso (Telegram,
+# Notion das bases pessoais, OpenAI, Anthropic) e `backups/` com dumps do Notion
+# da Bruna. Um denylist esquece arquivo novo; um allowlist não. Por isso a regra
+# é: tudo na raiz sai, e só três entradas voltam.
+#
+# `/*` casa apenas a profundidade 1. É de propósito: nada dentro de `api/` e
+# `dashboard/` chega a ser excluído, então basta reincluir as duas pastas para
+# o conteúdo vir junto. (Reincluir um arquivo cujo diretório-pai já foi excluído
+# não funciona — foi o que derrubou a primeira tentativa de deploy.)
+#
+# Efeito colateral desejado: sem `package.json` no bundle, a Vercel não roda
+# build de Node nem instala as dependências do runtime dos agentes.
+/*
+
+!/api
+!/dashboard
+!/vercel.json
+
+# Bytecode não serve para nada em produção e ainda entrega a versão de Python
+# usada aqui. Reexcluído em qualquer nível, depois da lista de permissão.
+__pycache__/

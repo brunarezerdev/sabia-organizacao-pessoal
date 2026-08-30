@@ -88,3 +88,10 @@ sabia/fila/saida/*
 sabia/fila/processadas/*
 sabia/fila/ledger.jsonl
 !sabia/fila/*/.gitkeep
+
+# ---------------------------------------------------------------------------
+# Vercel
+# ---------------------------------------------------------------------------
+# `.vercel/` guarda o vínculo local com o projeto (projectId/orgId) e o cache
+# de build da CLI. É estado de máquina, não de repositório.
+.vercel/
