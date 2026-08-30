@@ -1,0 +1,5 @@
+# A função pública é de propósito só biblioteca padrão.
+#
+# Este arquivo existe vazio para que o runtime Python da Vercel não instale o
+# requirements.txt da raiz (requests, google-auth, mcp) dentro do bundle
+# público. Nada da superfície exposta deve depender desses pacotes.
