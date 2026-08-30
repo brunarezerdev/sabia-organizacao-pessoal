@@ -15,8 +15,35 @@ aqui é reduzir essa fricção a zero.
 
 ---
 
+## Onde está cada requisito do trabalho
+
+Atalho para quem vai avaliar. Cada linha aponta o arquivo que implementa o
+requisito e o teste que prova que ele funciona.
+
+| Requisito | Onde está no código | Teste |
+|---|---|---|
+| **Central Inteligente de Integração** — uma camada que recebe, entende e distribui | `src/sop/orquestradora.py` (decide) e `src/sop/automacao.py` (executa o fluxo inteiro) | `tests/test_automacao.py` |
+| **API 1 — Telegram Bot API** (entrada) | `src/sop/integracoes/telegram.py` | `tests/test_integracoes.py` |
+| **API 2 — Google Calendar API v3** (saída) | `src/sop/integracoes/google_calendar.py`, OAuth em `scripts/autorizar_google.py` | `tests/test_integracoes.py`, `tests/test_gcal_mcp.py` |
+| **API 3 — OpenAI, rota Codex** (classificação; além do mínimo pedido) | `src/sop/integracoes/ia.py`, `src/sop/openclaw.py` | `tests/test_classificacao.py`, `tests/test_openclaw.py` |
+| **Banco de dados no-code — Notion** | `src/sop/integracoes/notion.py`, preparação das bases em `scripts/preparar_notion.py` e `scripts/preparar_rituais_notion.py` | `tests/test_integracoes.py` |
+| **Prova da cadeia ponta a ponta** com as três integrações reais | `scripts/provar_cadeia.py` | evidência registrada em [`docs/evidencias/`](docs/evidencias/) |
+
+O trabalho pede duas ou mais APIs integradas; este projeto integra quatro, com
+quatro mecanismos de autenticação diferentes. O detalhamento está em
+[APIs utilizadas e justificativa](#apis-utilizadas-e-justificativa).
+
+Para ver a cadeia rodando sem configurar credencial nenhuma:
+
+```bash
+pip install -e ".[dev]" && python -m sop demo
+```
+
+---
+
 ## Índice
 
+- [Onde está cada requisito do trabalho](#onde-está-cada-requisito-do-trabalho)
 - [Descrição da solução](#descrição-da-solução)
 - [APIs utilizadas e justificativa](#apis-utilizadas-e-justificativa)
 - [Arquitetura e fluxo de integração](#arquitetura-e-fluxo-de-integração)
@@ -25,9 +52,11 @@ aqui é reduzir essa fricção a zero.
 - [Instalar e rodar o OpenClaw](#instalar-e-rodar-o-openclaw)
 - [Como executar](#como-executar)
 - [Automação de ponta a ponta](#automação-de-ponta-a-ponta)
+- [O ciclo diário: briefing da manhã](#o-ciclo-diário-briefing-da-manhã)
 - [O ciclo semanal: regras se-então e ritual de domingo](#o-ciclo-semanal-regras-se-então-e-ritual-de-domingo)
 - [Testes](#testes)
 - [Prints](#prints)
+- [O que ainda é parcial](#o-que-ainda-é-parcial)
 
 ---
 
@@ -41,15 +70,20 @@ uma dessas coisas mora em um app diferente. O custo de decidir *onde* registrar
 
 A solução é inverter a responsabilidade: **a pessoa despeja o pensamento em um
 canal só e o sistema faz a triagem.** Uma camada de IA lê a mensagem, decide
-qual dos sete agentes especializados cuida daquilo, extrai os campos
+qual dos sete agentes de domínio cuida daquilo, extrai os campos
 estruturados (data, hora, valor, projeto, disciplina) e grava no lugar certo.
+São oito agentes ao todo: a Sábia, que orquestra, e os sete que executam.
 
 O que o sistema entrega:
 
 - **Captura sem fricção** — Telegram, que a pessoa já tem aberto.
 - **Classificação automática** — sete funções cognitivas, um agente cada.
+- **Pergunta em vez de presumir** — quando falta um dado essencial, o agente faz
+  uma pergunta curta e segura o registro, em vez de inventar o valor.
 - **Registro estruturado** — Notion, que a pessoa consegue abrir e editar.
 - **Agendamento automático** — o que tem data vira evento na Google Agenda.
+- **Briefing diário e fechamento de domingo** — as duas rotinas de cron que
+  fecham o ciclo, descritas mais abaixo.
 - **Painel de acompanhamento** — a própria database do Notion, com filtros por
   agente, categoria e data.
 
@@ -592,6 +626,46 @@ python -m sop demo
 
 ---
 
+## O ciclo diário: briefing da manhã
+
+Todo dia de manhã a Sábia monta um briefing e entrega no Telegram. A instrução
+que ela segue é um arquivo versionado, `sabia/briefing-diario.md`, e o cron
+dispara por `scripts/openclaw/rotina_sabia.sh`.
+
+O briefing tem cinco blocos, nesta ordem:
+
+1. **Previsão do tempo** da cidade, consultada no `wttr.in`.
+2. **Agenda do dia**, lida da Google Agenda.
+3. **Cardápio do dia**, lido da base `Planejamento de Refeições` no Notion.
+4. **Pendências abertas**, lidas da base `Prazos e tarefas` no Notion.
+5. **Combinação das três prioridades do dia.**
+
+O quinto bloco é o que dá o desenho do sistema. Ele **propõe** até três
+candidatas (itens não feitos com prazo hoje ou amanhã) e termina pedindo
+confirmação. A Sábia não escolhe a prioridade no lugar da pessoa: enquanto não
+houver resposta explícita, nada é gravado. Quando a combinação fecha, o único
+lugar onde ela mora é a propriedade de data `Prioridade do dia`, na mesma base
+`Prazos e tarefas` — sem base paralela, sem duplicata e nunca mais de três.
+
+É a mesma política de "perguntar em vez de presumir" que vale na classificação,
+aplicada à decisão do dia.
+
+A rotina roda um turno do agente principal na sessão direta da pessoa, e não
+numa conversa nova. É isso que faz a resposta "pode ser essas duas, mas troca a
+terceira" continuar a mesma conversa do briefing.
+
+```bash
+SOP_BRIEFING_CHAT_ID=<chat> bash scripts/openclaw/rotina_sabia.sh
+```
+
+Os testes de `tests/test_briefing.py` são **estáticos de propósito**: eles
+verificam o contrato da instrução (a ordem dos blocos, a fonte única das
+prioridades, a proibição de gravar sem confirmação) sem mandar Telegram nem
+tocar nas bases reais. O comportamento do modelo em si não é testado
+automaticamente.
+
+---
+
 ## O ciclo semanal: regras se-então e ritual de domingo
 
 A automação da mensagem resolve o minuto. O ciclo semanal resolve a semana.
@@ -694,13 +768,13 @@ chamada.
 python -m pytest
 ```
 
-**253 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
-substituídas por sessões HTTP falsas e o cliente da Anthropic por um duplo que
+**260 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
+substituídas por sessões HTTP falsas e o cliente de IA por um duplo que
 registra os parâmetros recebidos.
 
 | Arquivo | Cobre |
 |---|---|
-| `test_agentes.py` | Carga das definições, categorias sem sobreposição |
+| `test_agentes.py` | Carga das definições, categorias sem sobreposição, personas |
 | `test_config.py` | Subir sem credencial, diagnóstico, mensagens de erro |
 | `test_fila.py` | FIFO, retentativa, persistência entre processos, órfãs |
 | `test_classificacao.py` | Datas relativas, extração de valor, roteamento, structured output |
@@ -709,6 +783,9 @@ registra os parâmetros recebidos.
 | `test_seguranca.py` | Varredura de dados sensíveis no repositório |
 | `test_regras.py` | Motor se-então: casamento de gatilho, efeito de segunda ordem, prazos |
 | `test_ritual.py` | Limites das semanas, leitura da agenda, saída para Telegram e Notion |
+| `test_briefing.py` | Contrato do briefing diário: ordem dos blocos, fonte única das prioridades, proibição de gravar sem confirmação |
+| `test_openclaw.py` | Declaração dos agentes, geração das almas, backend que fala com o CLI |
+| `test_gcal_mcp.py` | Servidor MCP da agenda: resolução de rótulo e tradução de falha |
 
 Alguns testes que valem menção:
 
@@ -767,7 +844,7 @@ _Print do `python -m sop diagnostico` com as quatro integrações prontas._
 
 <!-- ![Testes](docs/prints/05-testes.png) -->
 
-_Print do `python -m pytest` com os 241 testes verdes._
+_Print do `python -m pytest` com os 260 testes verdes._
 
 ### 6. Painel de acompanhamento
 
@@ -787,13 +864,29 @@ sop-pessoal/
 │   ├── arquitetura.md         decisões de arquitetura
 │   ├── fluxo.md               diagramas Mermaid
 │   ├── seguranca.md           modelo de ameaças e controles
+│   ├── openclaw.md            instalação, decisões e pontos em aberto
+│   ├── google-agenda.md       OAuth, escopos e o servidor MCP
+│   ├── estrutura-sabia.md     como a Sábia roda nesta instalação
+│   ├── evidencias/            prova da cadeia rodando com as APIs reais
 │   └── prints/                capturas de tela da entrega
 ├── exemplos/
 │   ├── mensagens.json         12 mensagens fictícias para demonstração
 │   ├── regras.json            regras se-então de exemplo
 │   └── semana.json            semana fictícia para o `sop simular`
+├── openclaw/                  declaração gerada e as almas (SOUL.md) por agente
+├── sabia/
+│   ├── briefing-diario.md     instrução do briefing da manhã
+│   ├── almas/                 prompts dos agentes desta instalação
+│   ├── bin/                   leitor da fila do gateway
+│   └── fila/                  entrada, saída e processadas (conteúdo não versionado)
 ├── scripts/
 │   ├── autorizar_google.py    fluxo OAuth, roda uma vez
+│   ├── preparar_notion.py     cria as bases no-code do Notion
+│   ├── preparar_rituais_notion.py  cria a base dos registros de domingo
+│   ├── backup_notion.py       exporta as bases do Notion
+│   ├── provar_cadeia.py       prova ponta a ponta com as APIs reais
+│   ├── ritual_domingo.sh      entrada de cron do fechamento semanal
+│   ├── openclaw/rotina_sabia.sh  entrada de cron do briefing diário
 │   ├── verificar_config.py    testa as credenciais contra as APIs
 │   └── varredura_seguranca.sh varredura de dados sensíveis
 ├── src/sop/
@@ -802,14 +895,39 @@ sop-pessoal/
 │   ├── regras.py              motor de regras se-então
 │   ├── ritual.py              fechamento e abertura da semana
 │   ├── fila.py                fila durável em disco
+│   ├── openclaw.py            declaração dos agentes e backend do CLI
 │   ├── agentes/               carga das definições
-│   ├── integracoes/           telegram, notion, google_calendar, ia
+│   ├── integracoes/           telegram, notion, google_calendar, gcal_mcp, ia
 │   ├── config.py              configuração e diagnóstico
 │   ├── modelos.py             estruturas de dados
 │   ├── datas.py               datas relativas em português
 │   └── cli.py                 interface de linha de comando
-└── tests/                     159 testes, sem rede
+├── systemd/                   unidade do gateway
+└── tests/                     260 testes, sem rede
 ```
+
+---
+
+## O que ainda é parcial
+
+Para não vender como pronto o que não está:
+
+- **Prints da entrega.** `docs/prints/` ainda só tem o `LEIA-ME.md`; as seis
+  capturas continuam como espaço reservado. A prova de que a cadeia roda com as
+  APIs reais está em [`docs/evidencias/`](docs/evidencias/), em texto.
+- **Cinco dos oito agentes rodam no OpenClaw.** `main`, `esquilo`, `raposa`,
+  `elefante` e `borboleta` estão instalados. `beija-flor`, `abelha` e `cervo`
+  existem no roteamento Python, com `openclaw_ativo: false`, e ainda não têm
+  workspace próprio.
+- **`OPENCLAW_COMANDO` não foi verificado.** Enquanto a variável estiver vazia,
+  a classificação cai no heurístico local. Detalhe em
+  [Ponto a confirmar antes de usar em produção](#ponto-a-confirmar-antes-de-usar-em-produção).
+- **O briefing diário é testado por contrato, não por execução.** Os testes
+  garantem a instrução; o comportamento do modelo em produção é conferido a olho.
+- **O repositório é privado.** Ele carrega o primeiro nome de quem usa o sistema
+  em documentação e nas almas dos agentes. Não há credencial, e-mail, telefone
+  nem identificador de chat versionado — a varredura de `scripts/varredura_seguranca.sh`
+  roda limpa —, mas tornar público é uma decisão que ainda não foi tomada.
 
 ---
 
