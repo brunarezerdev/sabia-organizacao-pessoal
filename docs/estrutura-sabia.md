@@ -19,7 +19,7 @@ passaram para a `juliana-ops`. A `borboleta`, criada em 29/08/2026, entra como o
 
 ## A orquestradora
 
-A orquestradora chama-se **Sábia** 🦉 e é o agente `main` do OpenClaw. É ela que atende no
+A orquestradora chama-se **Sábia, a coruja** 🦉 e é o agente `main` do OpenClaw. É ela que atende no
 `@SabiaAquiBot`: recebe a mensagem, entende, escolhe o agente e devolve o resultado.
 
 A Sábia não é a Ária. A Ária é outra assistente, de outra operação, em outro bot, com outro
@@ -27,6 +27,25 @@ token. O bot `@SabiaAquiBot` nunca foi da Ária.
 
 A alma da Sábia é escrita à mão em `sabia/orquestradora.md`. Ela é a única fonte: o arquivo em
 `sabia/almas/sabia.md` e o `SOUL.md` do workspace são gerados.
+
+### As oito funções cognitivas
+
+Na camada que a pessoa vê, cada função tem uma persona. Os ids técnicos continuam sendo os
+animais, porque são eles que sustentam roteamento e classificação.
+
+| Persona | Função |
+| --- | --- |
+| Sábia, a coruja 🦉 | orquestração |
+| Prumo, a raposa 🦊 | estratégia e projetos |
+| Lida, a abelha 🐝 | rotinas e execução |
+| Tino, o esquilo 🐿️ | recursos e reservas |
+| Elo, o cervo 🦌 | família e cuidado |
+| Eco, o elefante 🐘 | memória e arquivos |
+| Nova, a borboleta 🦋 | educação e desenvolvimento |
+| Psiu, o beija-flor 🐦 | comunicação e alertas |
+
+Esses agentes são funções cognitivas, não páginas. Lida, a abelha, atravessa os territórios
+em vez de morar em um.
 
 ## Os nove agentes
 

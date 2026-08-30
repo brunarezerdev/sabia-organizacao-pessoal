@@ -55,10 +55,10 @@ O que o sistema entrega:
 
 ### Por que agentes especializados e não um classificador só
 
-Cada domínio tem regras próprias que não se generalizam. O Esquilo 🐿️
+Cada domínio tem regras próprias que não se generalizam. Tino, o esquilo 🐿️,
 tem uma regra que nenhum outro tem: **nunca inventar um valor**. Se a mensagem
 diz "gastei no posto" sem número, o registro é criado marcado para confirmação,
-em vez de chutar. O Esquilo tem outra: uma lista falada
+em vez de chutar. Tino tem outra: uma lista falada
 ("preciso de arroz, feijão e sabão") vira três registros, não um.
 
 Codificar isso num prompt único produziria um monstro impossível de manter.
@@ -180,21 +180,21 @@ decorá-lo.
 
 | Agente | Função | Domínio | Categorias | Cria evento? |
 |---|---|---|---|---|
-| **Raposa** 🦊 | planejar | estratégia, projetos, metas, prioridades | `tarefa`, `marco`, `metrica` | sim |
-| **Abelha** 🐝 | fazer | rotinas, hábitos, limpeza, tarefas recorrentes | `limpeza`, `rotina` | não |
-| **Esquilo** 🐿️ | guardar | finanças, compras, estoque, patrimônio | `gasto`, `receita`, `meta`, `compras`, `estoque` | não |
-| **Cervo** 🦌 | cuidar | família, filhos, casa, alimentação, bem-estar | `cardapio`, `familia` | não |
-| **Elefante** 🐘 | lembrar | memória, documentos, histórico, registros | `documento`, `registro` | não |
-| **Borboleta** 🦋 | crescer | educação, estudos, hábitos de aprendizado, cursos, leituras, desenvolvimento pessoal | `estudo`, `material`, `flashcard`, `curso`, `aprendizado` | sim |
-| **Beija-flor** 🐦 | avisar | calendário, lembretes, avisos, mensagens | `compromisso`, `lembrete`, `mensagem` | sim |
+| **Prumo, a raposa** 🦊 | planejar | estratégia, projetos, metas, prioridades | `tarefa`, `marco`, `metrica` | sim |
+| **Lida, a abelha** 🐝 | fazer | rotinas, hábitos, limpeza, tarefas recorrentes | `limpeza`, `rotina` | não |
+| **Tino, o esquilo** 🐿️ | guardar | finanças, compras, estoque, patrimônio | `gasto`, `receita`, `meta`, `compras`, `estoque` | não |
+| **Elo, o cervo** 🦌 | cuidar | família, filhos, casa, alimentação, bem-estar | `cardapio`, `familia` | não |
+| **Eco, o elefante** 🐘 | lembrar | memória, documentos, histórico, registros | `documento`, `registro` | não |
+| **Nova, a borboleta** 🦋 | crescer | educação, estudos, hábitos de aprendizado, cursos, leituras, desenvolvimento pessoal | `estudo`, `material`, `flashcard`, `curso`, `aprendizado` | sim |
+| **Psiu, o beija-flor** 🐦 | avisar | calendário, lembretes, avisos, mensagens | `compromisso`, `lembrete`, `mensagem` | sim |
 
-A **Sábia** 🦉 é a oitava e mora em `agentes/_orquestradora.md`. O prefixo `_` a
+A **Sábia, a coruja** 🦉 é a oitava e mora em `agentes/_orquestradora.md`. O prefixo `_` a
 mantém fora do roteamento: ela compreende, consulta o contexto e decide para
 quem vai a mensagem, sem receber categoria nenhuma. O `nome:` dela continua
 `main`, que é o slot do agente principal no OpenClaw.
 
 O **efeito borboleta** citado em `regras.py` e no ritual semanal é outra coisa:
-é o encadeamento se-então entre compromissos, não a agente Borboleta 🦋.
+é o encadeamento se-então entre compromissos, não Nova, a borboleta 🦋.
 
 ### Como a Sábia fala
 
@@ -225,11 +225,11 @@ python -m sop openclaw --verificar  # falha se alguém editou agentes/ sem reger
 
 | id | Papel | Tools |
 |---|---|---|
-| `main` | Sábia 🦉, compreender e despachar | `fs.read`, `grep`, `agent.invoke` |
-| `esquilo` | Esquilo 🐿️, guardar | `fs.read`, `fs.write` |
-| `raposa` | Raposa 🦊, planejar | `fs.read`, `fs.write` |
-| `elefante` | Elefante 🐘, lembrar | `fs.read`, `fs.write` |
-| `borboleta` | Borboleta 🦋, crescer | `fs.read`, `fs.write`, `web.fetch` |
+| `main` | Sábia, a coruja 🦉, compreender e despachar | `fs.read`, `grep`, `agent.invoke` |
+| `esquilo` | Tino, o esquilo 🐿️, guardar | `fs.read`, `fs.write` |
+| `raposa` | Prumo, a raposa 🦊, planejar | `fs.read`, `fs.write` |
+| `elefante` | Eco, o elefante 🐘, lembrar | `fs.read`, `fs.write` |
+| `borboleta` | Nova, a borboleta 🦋, crescer | `fs.read`, `fs.write`, `web.fetch` |
 
 `beija-flor`, `abelha` e `cervo` permanecem apenas no roteamento Python, com
 `openclaw_ativo: false`; não são instalados no OpenClaw. Agenda e rotina
@@ -573,7 +573,7 @@ Passo a passo do que acontece quando alguém escreve
    que a categoria pertence a ele. Se o modelo alucinar um agente inexistente,
    o roteamento é resgatado pela categoria.
 5. **Registro** — o item é gravado no Notion com todas as propriedades.
-6. **Agendamento** — como tem data e o Beija-flor trabalha com agenda, um
+6. **Agendamento** — como tem data e Psiu, o beija-flor, trabalha com agenda, um
    evento de 60 minutos é criado na Google Agenda.
 7. **Confirmação** — o sistema responde no Telegram dizendo o que entendeu,
    onde guardou e se algo precisa de confirmação.

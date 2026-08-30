@@ -30,7 +30,7 @@
   "subagentes": [
     {
       "id": "borboleta",
-      "nome": "Borboleta",
+      "nome": "Nova, a borboleta",
       "emoji": "🦋",
       "descricao": "educação, estudos, hábitos de aprendizado, cursos, leituras e desenvolvimento pessoal",
       "modelo": "openai/gpt-5.5",
@@ -44,7 +44,7 @@
     },
     {
       "id": "elefante",
-      "nome": "Elefante",
+      "nome": "Eco, o elefante",
       "emoji": "🐘",
       "descricao": "memória, documentos, histórico e registros",
       "modelo": "openai/gpt-5.5",
@@ -57,7 +57,7 @@
     },
     {
       "id": "esquilo",
-      "nome": "Esquilo",
+      "nome": "Tino, o esquilo",
       "emoji": "🐿️",
       "descricao": "finanças, compras, estoque e patrimônio",
       "modelo": "openai/gpt-5.5",
@@ -70,7 +70,7 @@
     },
     {
       "id": "raposa",
-      "nome": "Raposa",
+      "nome": "Prumo, a raposa",
       "emoji": "🦊",
       "descricao": "estratégia, projetos, metas e prioridades",
       "modelo": "openai/gpt-5.5",

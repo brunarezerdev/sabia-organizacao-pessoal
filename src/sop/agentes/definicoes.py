@@ -28,6 +28,7 @@ class AgenteDef:
 
     nome: str
     titulo: str
+    persona: str
     dominio: str
     categorias: tuple[str, ...]
     integracoes: tuple[str, ...]
@@ -136,6 +137,7 @@ def carregar_agente(caminho: Path) -> AgenteDef:
     return AgenteDef(
         nome=nome,
         titulo=str(dados.get("titulo") or nome.capitalize()),
+        persona=str(dados.get("persona") or ""),
         dominio=str(dados.get("dominio") or ""),
         categorias=lista("categorias"),
         integracoes=lista("integracoes"),

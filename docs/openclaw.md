@@ -51,7 +51,7 @@ append não destrutivo, valida na escrita e cria o workspace. É o que
 Cinco agentes constam na declaração: a Sábia e quatro especialistas de domínio.
 `beija-flor`, `abelha` e `cervo` continuam no roteamento Python, mas têm
 `openclaw_ativo: false` e não são registrados no OpenClaw; agenda e rotina
-doméstica seguem com a `juliana-ops`. A Borboleta nasceu depois da instalação
+doméstica seguem com a `juliana-ops`. Nova, a borboleta, nasceu depois da instalação
 e só entra na configuração ativa quando `registrar_agentes.sh` rodar.
 
 Os ids `financeira`, `projetos` e `educacional` foram renomeados para `esquilo`,
@@ -62,11 +62,11 @@ tem os antigos, e só passa a valer depois de rodar
 
 | id | Nome | Papel | Modelo | Tools |
 |---|---|---|---|---|
-| `main` | Sábia 🦉 | Compreender, decidir e despachar | `openai/gpt-5.5` | `fs.read`, `grep`, `agent.invoke` |
-| `esquilo` | Esquilo 🐿️ | Guardar: finanças, compras, estoque | `openai/gpt-5.5` | `fs.read`, `fs.write` |
-| `raposa` | Raposa 🦊 | Planejar: projetos, metas, prioridades | `openai/gpt-5.5` | `fs.read`, `fs.write` |
-| `elefante` | Elefante 🐘 | Lembrar: memória, documentos, registros | `openai/gpt-5.5` | `fs.read`, `fs.write` |
-| `borboleta` | Borboleta 🦋 | Crescer: educação, estudos, desenvolvimento pessoal | `openai/gpt-5.5` | `fs.read`, `fs.write`, `web.fetch` |
+| `main` | Sábia, a coruja 🦉 | Compreender, decidir e despachar | `openai/gpt-5.5` | `fs.read`, `grep`, `agent.invoke` |
+| `esquilo` | Tino, o esquilo 🐿️ | Guardar: finanças, compras, estoque | `openai/gpt-5.5` | `fs.read`, `fs.write` |
+| `raposa` | Prumo, a raposa 🦊 | Planejar: projetos, metas, prioridades | `openai/gpt-5.5` | `fs.read`, `fs.write` |
+| `elefante` | Eco, o elefante 🐘 | Lembrar: memória, documentos, registros | `openai/gpt-5.5` | `fs.read`, `fs.write` |
+| `borboleta` | Nova, a borboleta 🦋 | Crescer: educação, estudos, desenvolvimento pessoal | `openai/gpt-5.5` | `fs.read`, `fs.write`, `web.fetch` |
 
 ### Como as tools foram escolhidas
 
@@ -75,8 +75,8 @@ superfície de erro e de custo.
 
 - **`fs.read` + `fs.write`** para todo agente de domínio: ele lê o contexto e
   produz o registro. Nada além disso.
-- **`web.fetch`** só na Borboleta, que precisa abrir o material de estudo
-  referenciado na mensagem. Era do Elefante até 29/08/2026, quando o estudo
+- **`web.fetch`** só em Nova, a borboleta, que precisa abrir o material de estudo
+  referenciado na mensagem. Era de Eco, o elefante, até 29/08/2026, quando o estudo
   saiu dele; a tool foi junto com o escopo.
 - **`agent.invoke`** só na orquestradora. Dar delegação a um especialista abre
   caminho para loop infinito: A chama B, B chama A. Há um teste que garante

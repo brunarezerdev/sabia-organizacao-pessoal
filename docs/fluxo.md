@@ -74,7 +74,7 @@ sequenceDiagram
 
     O->>F: concluir(tarefa)
     O->>TG: confirmação do que foi entendido
-    TG-->>P: "Anotado em beija-flor (compromisso)..."
+    TG-->>P: "Anotado com Psiu, o beija-flor (compromisso)..."
 ```
 
 ---
