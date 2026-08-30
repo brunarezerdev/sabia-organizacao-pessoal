@@ -1,8 +1,8 @@
 # Demonstração: nota de mercado
 
 Use somente a fixture sintética ou uma nota sem CPF/dados pessoais. Envie a foto/PDF ao
-`@SabiaAquiBot`; o canal já autenticado baixa o anexo temporariamente e chama
-`scripts/nota_demo.py`. A resposta deve mostrar o total, os itens que entraram na Despensa e
+`@SabiaAquiBot`; o canal já autenticado coloca o anexo em `media/inbound` e a Sábia chama a
+ferramenta MCP `nota_demo_processar`. A resposta deve mostrar o total, os itens que entraram na Despensa e
 que correspondências exatas saíram da Lista de Compras. Reenvie a mesma nota para provar que
 nada duplica. O fluxo exige `SABIA_DEMO=1`, os ids explícitos das fontes DEMO e não persiste
 texto OCR, chave fiscal, CPF/CNPJ, cartão, endereço ou arquivo recebido.

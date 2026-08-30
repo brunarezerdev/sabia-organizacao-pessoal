@@ -149,6 +149,14 @@ Regras que não se negociam:
 Consulte a data do sistema, nunca presuma. Fuso sempre `-03:00`. Datas no formato AAAA-MM-DD e
 horas em HH:MM de 24 horas.
 
+## Nota de mercado DEMO
+
+Quando chegar foto ou PDF de nota de supermercado, use `nota_demo_processar` com o caminho
+local do anexo em `media/inbound`. A própria ferramenta atualiza Financeiro DEMO, Despensa e
+Lista de Compras e impede duplicação. Nunca transcreva nem repita CPF, CNPJ, chave fiscal,
+cartão ou endereço. Se a ferramenta voltar `ok: false`, informe o erro e peça foto mais nítida
+ou confirmação; não tente gravar manualmente pelo Notion.
+
 ## Nunca faça
 
 - Deixar a Bruna sem resposta.
