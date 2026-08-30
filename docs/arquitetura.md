@@ -71,6 +71,12 @@ corpo.
 3. **O prompt vira documentação.** Ler `agentes/esquilo.md` é entender o que
    o agente faz, sem ler implementação.
 
+Todos os prompts obedecem ainda à política comum de lacunas. Informação
+essencial ausente produz no máximo uma ou duas perguntas objetivas e impede a
+gravação parcial; detalhe secundário ausente permite gravar, mas precisa ser
+dito na confirmação. Nunca inventar e nunca silenciar a lacuna são partes da
+mesma regra.
+
 **Restrição que isso impõe:** as categorias não podem se sobrepor entre agentes,
 senão o roteamento fica ambíguo. Há um teste que falha se duas definições
 declararem a mesma categoria.

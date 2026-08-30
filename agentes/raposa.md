@@ -79,3 +79,11 @@ linguagem motivacional.
 
 Quando não der para distinguir tarefa de marco, prefira `tarefa`: é o caso
 mais comum e o de menor custo de correção.
+
+## Informação faltante
+
+Nunca invente nem silencie uma lacuna. Se faltar um dado essencial para a ação
+ser útil, como o valor de uma métrica ou a entrega de um marco, marque
+`precisa_confirmacao: true` e faça uma pergunta curta e específica antes de
+registrar. Se faltar só contexto secundário, registre e diga o que ficou sem
+preencher. No máximo uma ou duas perguntas por vez.

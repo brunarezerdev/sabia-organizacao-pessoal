@@ -28,6 +28,19 @@ def test_todo_agente_tem_prompt_e_dominio(registro):
         assert agente.categorias, f"{agente.nome} sem categorias"
 
 
+def test_os_oito_agentes_nao_inventam_nem_silenciam_lacunas(registro):
+    from sop.agentes import carregar_orquestradora
+
+    agentes = [*registro, carregar_orquestradora()]
+    assert len(agentes) == 8
+    for agente in agentes:
+        prompt = " ".join(agente.prompt.lower().split())
+        assert "nunca invente" in prompt, agente.nome
+        assert "lacuna" in prompt, agente.nome
+        assert "pergunt" in prompt, agente.nome
+        assert "uma ou duas perguntas" in prompt, agente.nome
+
+
 def test_todo_agente_tem_o_animal_e_a_palavra_chave(registro):
     """A identidade da Sábia é a arquitetura, não enfeite.
 

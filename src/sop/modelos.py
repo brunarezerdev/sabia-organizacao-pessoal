@@ -37,6 +37,8 @@ class Classificacao:
     recorrencia: str | None = None
     observacao: str = ""
     precisa_confirmacao: bool = False
+    pergunta_confirmacao: str | None = None
+    lacuna_secundaria: str | None = None
     confianca: float = 0.0
     origem: str = "heuristica"  # "ia" ou "heuristica"
 
@@ -69,6 +71,8 @@ class Item:
                 "estado": c.estado,
                 "recorrencia": c.recorrencia,
                 "precisa_confirmacao": c.precisa_confirmacao,
+                "pergunta_confirmacao": c.pergunta_confirmacao,
+                "lacuna_secundaria": c.lacuna_secundaria,
             }.items()
             if valor not in (None, "", False)
         }

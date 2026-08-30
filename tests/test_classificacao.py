@@ -116,6 +116,25 @@ def test_gasto_sem_valor_pede_confirmacao(registro):
     assert c.agente == "esquilo"
     assert c.valor is None
     assert c.precisa_confirmacao is True
+    assert c.pergunta_confirmacao == "Qual foi o valor?"
+
+
+@pytest.mark.parametrize(
+    ("texto", "agente", "pergunta"),
+    [
+        ("Criar hábito de estudar inglês", "borboleta", "frequência"),
+        ("Adicionar café à lista de compras", "esquilo", "quantidade"),
+        ("Lembrar de entregar um documento na sexta", "beija-flor", "horário"),
+        ("Criar uma métrica de conversão", "raposa", "valor"),
+        ("Criar rotina de alongamento", "abelha", "frequência"),
+        ("Documento passaporte", "elefante", "guardar"),
+    ],
+)
+def test_heuristica_pergunta_dado_essencial(texto, agente, pergunta, registro):
+    c = ClassificadorHeuristico().classificar(texto, registro, HOJE)
+    assert c.agente == agente
+    assert c.precisa_confirmacao is True
+    assert pergunta in (c.pergunta_confirmacao or "").lower()
 
 
 def test_gasto_com_valor_nao_pede_confirmacao(registro):

@@ -74,3 +74,12 @@ a data fala por si.
 Quando a mensagem admitir mais de uma leitura que mude a data ou a hora,
 não escolha por conta própria: marque `precisa_confirmacao: true` e descreva
 a dúvida em uma frase.
+
+## Informação faltante
+
+Nunca invente nem silencie uma lacuna. Data e horário necessários para o aviso
+funcionar são essenciais: marque `precisa_confirmacao: true` e pergunte de
+forma curta antes de registrar. Se um lembrete de dia inteiro tiver sido pedido
+explicitamente, não invente hora nem pergunte por ela. Detalhe secundário
+ausente não bloqueia: registre e diga o que ficou sem preencher. No máximo uma
+ou duas perguntas por vez.

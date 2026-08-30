@@ -37,7 +37,7 @@ def test_mensagem_com_data_grava_e_cria_evento(registro, banco, agenda):
 
 def test_item_sem_data_nao_vira_evento(registro, banco, agenda):
     automacao = montar(registro, banco, agenda)
-    resultado = automacao.executar(Mensagem(id="m2", texto="Acabou o café, comprar"))
+    resultado = automacao.executar(Mensagem(id="m2", texto="Comprar 2 pacotes de café"))
 
     assert resultado.id_no_banco == "pagina-1"
     assert resultado.id_do_evento is None
@@ -73,7 +73,7 @@ def test_falha_no_banco_e_reportada(registro, agenda):
     from conftest import BancoFalso
 
     automacao = montar(registro, BancoFalso(falhar=True), agenda)
-    resultado = automacao.executar(Mensagem(id="m5", texto="Comprar arroz"))
+    resultado = automacao.executar(Mensagem(id="m5", texto="Comprar 2 kg de arroz"))
 
     assert resultado.id_no_banco is None
     assert any("notion" in e for e in resultado.erros)
@@ -101,17 +101,19 @@ def test_resposta_menciona_agente_e_evento(registro, banco, agenda):
     assert "Evento criado na agenda." in texto
 
 
-def test_resposta_sinaliza_confirmacao_pendente(registro, banco):
+def test_lacuna_essencial_pergunta_e_nao_grava(registro, banco):
     automacao = montar(registro, banco)
     resultado = automacao.executar(Mensagem(id="m8", texto="Gastei no posto ontem"))
 
-    assert "confirmação" in Automacao.montar_resposta(resultado)
+    assert Automacao.montar_resposta(resultado) == "Antes de registrar: Qual foi o valor?"
+    assert resultado.id_no_banco is None
+    assert banco.itens == []
 
 
 def test_notificacao_recebe_a_resposta(registro, banco):
     enviadas: list[str] = []
     automacao = montar(registro, banco, notificar=enviadas.append)
-    automacao.executar(Mensagem(id="m9", texto="Comprar leite"))
+    automacao.executar(Mensagem(id="m9", texto="Comprar 2 litros de leite"))
 
     assert len(enviadas) == 1
     assert "esquilo" in enviadas[0]
@@ -124,7 +126,7 @@ def test_despacha_e_processa_pela_fila(registro, banco, agenda, tmp_path):
     fila = Fila(tmp_path)
     automacao = montar(registro, banco, agenda, fila=fila)
 
-    automacao.orquestradora.despachar(Mensagem(id="m10", texto="Comprar café"))
+    automacao.orquestradora.despachar(Mensagem(id="m10", texto="Comprar 2 pacotes de café"))
     automacao.orquestradora.despachar(Mensagem(id="m11", texto="Reunião amanhã às 9h"))
     assert fila.contar("pendente") == 2
 
@@ -134,6 +136,31 @@ def test_despacha_e_processa_pela_fila(registro, banco, agenda, tmp_path):
     assert fila.contar("concluida") == 2
     assert len(banco.itens) == 2
     assert len(agenda.eventos) == 1  # só a reunião tem data
+
+
+def test_lacuna_secundaria_grava_e_avisa(registro, banco):
+    from sop.modelos import Classificacao
+
+    class AdaptadorComLacunaSecundaria:
+        def classificar(self, texto, registro, hoje):
+            return Classificacao(
+                agente="raposa",
+                categoria="tarefa",
+                titulo="Revisar relatório",
+                estado="backlog",
+                lacuna_secundaria="projeto não informado",
+                confianca=0.9,
+                origem="teste",
+            )
+
+    automacao = Automacao(
+        Orquestradora(AdaptadorComLacunaSecundaria(), registro, hoje=lambda: HOJE),
+        banco=banco,
+    )
+    resultado = automacao.executar(Mensagem(id="m13", texto="Revisar relatório"))
+
+    assert resultado.id_no_banco == "pagina-1"
+    assert "Ficou sem: projeto não informado" in Automacao.montar_resposta(resultado)
 
 
 def test_despachar_sem_fila_explica_o_problema(registro):

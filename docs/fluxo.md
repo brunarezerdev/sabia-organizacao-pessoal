@@ -62,19 +62,26 @@ sequenceDiagram
 
     O->>O: o agente existe? a categoria é dele?
 
-    O->>N: criar_item(item)
-    N-->>O: id da página
-
-    alt tem data e o agente trabalha com agenda
-        O->>G: renovar access token
-        G-->>O: token temporário
-        O->>G: criar_evento(título, data, hora)
-        G-->>O: id do evento
+    alt falta informação essencial
+        O->>O: prepara pergunta curta e específica
+        Note right of O: não grava item incompleto
+    else pedido executável
+        O->>N: criar_item(item)
+        N-->>O: id da página
+        opt falta detalhe secundário
+            O->>O: inclui na confirmação o que ficou sem preencher
+        end
+        opt tem data e o agente trabalha com agenda
+            O->>G: renovar access token
+            G-->>O: token temporário
+            O->>G: criar_evento(título, data, hora)
+            G-->>O: id do evento
+        end
     end
 
     O->>F: concluir(tarefa)
-    O->>TG: confirmação do que foi entendido
-    TG-->>P: "Anotado com Psiu, o beija-flor (compromisso)..."
+    O->>TG: pergunta ou confirmação do que foi entendido
+    TG-->>P: "Antes de registrar: em que horário devo avisar?"
 ```
 
 ---
@@ -96,11 +103,14 @@ flowchart TD
     RESG -->|achou| CAT
     RESG -->|não achou| PAD[beija-flor<br/>+ pedir confirmação]
 
-    CAT -->|sim| OK[Classificação válida]
+    CAT -->|sim| LAC{Falta dado<br/>essencial?}
     CAT -->|não| AJU[Usa 1ª categoria do agente<br/>+ pedir confirmação]
 
-    PAD --> ITEM
-    AJU --> ITEM
+    PAD --> PERG
+    AJU --> PERG
+    LAC -->|sim| PERG[Pergunta objetiva<br/>não grava]
+    LAC -->|não| OK[Classificação válida]
+    PERG --> FIM
     OK --> ITEM[Monta o Item]
 
     ITEM --> NOT[(Notion)]

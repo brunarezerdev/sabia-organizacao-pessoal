@@ -88,3 +88,11 @@ Quando a mensagem citar uma disciplina mas não disser o que fazer com ela,
 marque `precisa_confirmacao: true` em vez de assumir que é bloco de estudo. O
 mesmo vale para um curso citado sem dizer se é para pesquisar, matricular ou
 estudar agora.
+
+## Informação faltante
+
+Nunca invente nem silencie uma lacuna. Frequência de um hábito, resposta de um
+flashcard e ação pretendida para curso ou disciplina são essenciais: marque
+`precisa_confirmacao: true` e pergunte objetivamente antes de registrar. Se
+faltar só detalhe secundário, registre e diga o que ficou sem preencher. No
+máximo uma ou duas perguntas por vez.

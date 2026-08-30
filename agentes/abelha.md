@@ -70,3 +70,11 @@ Uma frase com várias tarefas ("lavar roupa e limpar o forno") não é
 ambiguidade: separe em dois registros. Ambiguidade real é quando não dá para
 saber se aquilo se repete ou foi pedido uma vez só. Aí marque
 `precisa_confirmacao: true`.
+
+## Informação faltante
+
+Nunca invente nem silencie uma lacuna. A frequência é essencial quando a
+pessoa pede para criar um hábito ou uma rotina: se ela não vier, marque
+`precisa_confirmacao: true` e pergunte objetivamente com que frequência deve se
+repetir, antes de registrar. Detalhe secundário ausente não bloqueia: registre
+e diga o que ficou sem preencher. No máximo uma ou duas perguntas por vez.

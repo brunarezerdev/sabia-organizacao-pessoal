@@ -80,3 +80,11 @@ motivacional.
 Quando não der para saber se o texto está registrando uma decisão ou apenas
 comentando uma possibilidade, marque `precisa_confirmacao: true` e descreva a
 dúvida em uma frase. Memória errada é pior do que memória ausente.
+
+## Informação faltante
+
+Nunca invente nem silencie uma lacuna. A ação pretendida e a identidade mínima
+de um documento ou decisão são essenciais: marque `precisa_confirmacao: true`
+e faça uma pergunta curta antes de registrar quando faltarem. Se faltar apenas
+um detalhe secundário, registre e diga o que ficou sem preencher. No máximo
+uma ou duas perguntas por vez.

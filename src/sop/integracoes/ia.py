@@ -48,6 +48,8 @@ ESQUEMA_CLASSIFICACAO: dict[str, Any] = {
         "recorrencia": {"type": ["string", "null"]},
         "observacao": {"type": "string"},
         "precisa_confirmacao": {"type": "boolean"},
+        "pergunta_confirmacao": {"type": ["string", "null"]},
+        "lacuna_secundaria": {"type": ["string", "null"]},
         "confianca": {"type": "number"},
     },
     "required": [
@@ -56,6 +58,8 @@ ESQUEMA_CLASSIFICACAO: dict[str, Any] = {
         "titulo",
         "observacao",
         "precisa_confirmacao",
+        "pergunta_confirmacao",
+        "lacuna_secundaria",
         "confianca",
     ],
     "additionalProperties": False,
@@ -83,6 +87,9 @@ PADROES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("borboleta", "material", (r"\bler\b.*\b(livro|artigo|apostila|cap[íi]tulo)\b", r"\bmaterial\b", r"\bapostila\b")),
     ("borboleta", "curso", (r"\bcurso\b", r"\bmatr[íi]cula\b", r"\bmatricular\b", r"\bcertifica[çc][ãa]o\b", r"\bforma[çc][ãa]o\b", r"\bgradua[çc][ãa]o\b")),
     ("borboleta", "aprendizado", (r"\bdesenvolvimento pessoal\b", r"\baprend(er|izado|izagem)\b", r"\bh[áa]bito(s)? de (estudo|leitura|aprendizado)\b")),
+    # A ação "lembrar de entregar" é um aviso, mesmo quando o objeto é um
+    # documento. Precisa vir antes do roteamento de arquivo do Elefante.
+    ("beija-flor", "lembrete", (r"\blembrar de (entregar|levar|enviar|buscar)\b",)),
     ("elefante", "documento", (r"\bdocumento\b", r"\bgarantia\b", r"\bcontrato\b", r"\bcertid[ãa]o\b", r"\bcomprovante\b")),
     # `registro` é decisão tomada e histórico, não anotação em geral: os padrões
     # são estreitos de propósito para não engolir o resto do roteamento.
@@ -105,6 +112,7 @@ PADROES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
 )
 
 _VALOR = re.compile(r"r\$\s*([\d.]+,\d{2}|[\d.]+)", re.IGNORECASE)
+_NUMERO = re.compile(r"\b\d+(?:[.,]\d+)?\b")
 _RUIDO_INICIAL = re.compile(
     r"^(preciso de|preciso|tenho que|tenho de|lembrar de|lembra de|me lembra de|"
     r"por favor|anota(r| a[ií])?|adiciona(r)?|coloca(r)?)\s+",
@@ -157,8 +165,50 @@ class ClassificadorHeuristico:
         hora = resolver_hora(texto) if data else None
         valor = extrair_valor(texto) if agente == "esquilo" else None
 
-        # Regra do Esquilo: sem valor explícito, ninguém adivinha.
-        precisa_confirmacao = agente == "esquilo" and categoria in ("gasto", "receita") and valor is None
+        # O fallback também respeita a política de lacunas. Pergunta apenas o
+        # dado que impede uma execução útil; detalhes opcionais não viram um
+        # interrogatório.
+        pergunta_confirmacao = None
+        lacuna_secundaria = None
+        if agente == "esquilo" and categoria in ("gasto", "receita") and valor is None:
+            pergunta_confirmacao = "Qual foi o valor?"
+        elif agente == "esquilo" and categoria == "compras" and not _NUMERO.search(texto):
+            pergunta_confirmacao = "Qual quantidade devo adicionar?"
+        elif agente == "abelha" and categoria == "rotina" and not re.search(
+            r"\b(todo dia|toda (semana|manh[ãa]|noite)|di[aá]ri[oa]|semanal|quinzenal|mensal)\b",
+            minusculo,
+        ):
+            pergunta_confirmacao = "Com que frequência essa rotina deve se repetir?"
+        elif agente == "borboleta" and categoria == "flashcard" and not re.search(
+            r"\bresposta\b|\?\s*.+", texto, re.IGNORECASE
+        ):
+            pergunta_confirmacao = "Qual é a resposta do flashcard?"
+        elif agente == "borboleta" and categoria in ("aprendizado", "estudo") and re.search(
+            r"\bh[áa]bito\b", minusculo
+        ) and not re.search(
+            r"\b(todo dia|toda semana|di[aá]ri[oa]|semanal|\d+\s*(vez|vezes))\b",
+            minusculo,
+        ):
+            pergunta_confirmacao = "Com que frequência você quer praticar?"
+        elif agente == "raposa" and categoria == "metrica" and not _NUMERO.search(texto):
+            pergunta_confirmacao = "Qual valor devo registrar para essa métrica?"
+        elif agente == "elefante" and categoria == "documento" and not re.search(
+            r"\b(guardar|arquivar|consultar|buscar|procurar|encontrar)\b", minusculo
+        ):
+            pergunta_confirmacao = "Você quer guardar esse documento ou consultá-lo?"
+        elif agente == "cervo" and categoria == "familia" and not re.search(
+            r"\b(meu|minha|filh[oa]s?|crian[çc]as?|m[ãa]e|pai|esposa|marido)\b|"
+            r"\b(de|da|do)\s+[A-ZÁÉÍÓÚ][a-záéíóú]+\b",
+            texto,
+        ):
+            pergunta_confirmacao = "De quem da família é esse item?"
+        elif agente == "beija-flor" and categoria in ("lembrete", "compromisso"):
+            if data is None:
+                pergunta_confirmacao = "Para que dia devo programar?"
+            elif hora is None and not re.search(r"\bdia inteiro\b", minusculo):
+                pergunta_confirmacao = "Em que horário devo avisar?"
+
+        precisa_confirmacao = pergunta_confirmacao is not None
 
         return Classificacao(
             agente=agente,
@@ -171,6 +221,8 @@ class ClassificadorHeuristico:
             estado="backlog" if agente == "raposa" and categoria == "tarefa" else None,
             observacao="" if len(texto) <= 80 else texto.strip(),
             precisa_confirmacao=precisa_confirmacao,
+            pergunta_confirmacao=pergunta_confirmacao,
+            lacuna_secundaria=lacuna_secundaria,
             confianca=confianca,
             origem=self.origem,
         )
@@ -190,8 +242,9 @@ Leia a mensagem, decida qual agente cuida dela e extraia os campos.
 Agentes disponíveis:
 {catalogo}
 
-Nunca invente data, hora, valor, projeto ou disciplina. Datas em AAAA-MM-DD,
-horas em HH:MM. Em caso de ambiguidade, marque precisa_confirmacao.
+Nunca invente dados. Se faltar informação essencial, marque precisa_confirmacao
+e faça uma pergunta curta em pergunta_confirmacao. Se faltar apenas detalhe
+secundário, descreva-o em lacuna_secundaria.
 
 Hoje é {hoje}.
 """
@@ -275,6 +328,13 @@ class _BaseClassificador:
             pela_categoria = registro.por_categoria(categoria)
             agente = pela_categoria.nome if pela_categoria else "beija-flor"
 
+        pergunta_confirmacao = (
+            str(dados.get("pergunta_confirmacao") or "").strip() or None
+        )
+        precisa_confirmacao = bool(dados.get("precisa_confirmacao", False)) or bool(
+            pergunta_confirmacao
+        )
+
         return Classificacao(
             agente=agente or "beija-flor",
             categoria=categoria or "lembrete",
@@ -291,7 +351,11 @@ class _BaseClassificador:
             # devolve `null` sempre que não tem observação, então o caso é o
             # comum, não a exceção.
             observacao=str(dados.get("observacao") or ""),
-            precisa_confirmacao=bool(dados.get("precisa_confirmacao", False)),
+            precisa_confirmacao=precisa_confirmacao,
+            pergunta_confirmacao=pergunta_confirmacao,
+            lacuna_secundaria=(
+                str(dados.get("lacuna_secundaria") or "").strip() or None
+            ),
             confianca=float(dados.get("confianca", 0.0)),
             origem=self.origem,
         )

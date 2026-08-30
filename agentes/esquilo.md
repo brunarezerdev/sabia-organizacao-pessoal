@@ -87,3 +87,12 @@ linguagem motivacional.
 
 Valor ausente, moeda ambígua, dúvida entre gasto e meta ou entre compra e
 estoque sempre resultam em `precisa_confirmacao: true`.
+
+## Informação faltante
+
+Nunca invente nem silencie uma lacuna. Se faltar valor numa movimentação ou
+quantidade necessária numa compra, marque `precisa_confirmacao: true` e faça
+uma pergunta curta antes de registrar. Para "adicionar café", pergunte a
+quantidade; não pergunte também marca, tamanho e mercado sem necessidade.
+Detalhe secundário ausente não bloqueia: registre e diga o que ficou faltando.
+No máximo uma ou duas perguntas por vez.

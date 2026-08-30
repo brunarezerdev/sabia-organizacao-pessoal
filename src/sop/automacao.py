@@ -56,15 +56,22 @@ class Automacao:
             mensagem_id=mensagem.id, classificacao=classificacao, item=item
         )
 
-        # 1. Grava no banco no-code. É o passo essencial.
-        if self.banco is not None:
+        # Informação essencial ausente interrompe a execução: primeiro se faz
+        # a pergunta objetiva, depois uma nova mensagem completa o registro.
+        # Assim a lacuna não vira silenciosamente dado incompleto no Notion ou
+        # evento inexequível na agenda.
+        if self.banco is not None and not classificacao.precisa_confirmacao:
             try:
                 resultado.id_no_banco = self.banco.criar_item(item)
             except Exception as erro:  # noqa: BLE001 — o erro vai para o relatório
                 resultado.erros.append(f"notion: {erro}")
 
         # 2. Cria o evento, se o item tiver data e o agente trabalhar com agenda.
-        if self.agenda is not None and self.orquestradora.deve_criar_evento(classificacao):
+        if (
+            self.agenda is not None
+            and not classificacao.precisa_confirmacao
+            and self.orquestradora.deve_criar_evento(classificacao)
+        ):
             try:
                 resultado.id_do_evento = self.agenda.criar_evento(
                     titulo=item.titulo,
@@ -89,7 +96,15 @@ class Automacao:
     def montar_resposta(resultado: ResultadoAutomacao) -> str:
         """Texto curto de confirmação, do jeito que chega no Telegram."""
         c = resultado.classificacao
-        linhas = [f"Anotado em *{c.agente}* ({c.categoria}): {resultado.item.titulo}"]
+        if c.precisa_confirmacao:
+            pergunta = (
+                c.pergunta_confirmacao
+                or c.observacao
+                or "Qual informação falta para completar?"
+            )
+            linhas = [f"Antes de registrar: {pergunta}"]
+        else:
+            linhas = [f"Anotado em *{c.agente}* ({c.categoria}): {resultado.item.titulo}"]
 
         if resultado.item.data:
             quando = resultado.item.data
@@ -100,9 +115,8 @@ class Automacao:
         if resultado.id_do_evento:
             linhas.append("Evento criado na agenda.")
 
-        if c.precisa_confirmacao:
-            detalhe = c.observacao or "confirme os dados antes de considerar fechado"
-            linhas.append(f"Precisa da sua confirmação: {detalhe}")
+        if c.lacuna_secundaria:
+            linhas.append(f"Ficou sem: {c.lacuna_secundaria}")
 
         for erro in resultado.erros:
             linhas.append(f"Falhou: {erro}")

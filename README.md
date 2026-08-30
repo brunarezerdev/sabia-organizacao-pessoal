@@ -57,9 +57,15 @@ O que o sistema entrega:
 
 Cada domínio tem regras próprias que não se generalizam. Tino, o esquilo 🐿️,
 tem uma regra que nenhum outro tem: **nunca inventar um valor**. Se a mensagem
-diz "gastei no posto" sem número, o registro é criado marcado para confirmação,
-em vez de chutar. Tino tem outra: uma lista falada
+diz "gastei no posto" sem número, ele pergunta o valor antes de criar o
+registro, em vez de chutar. Tino tem outra: uma lista falada
 ("preciso de arroz, feijão e sabão") vira três registros, não um.
+
+Essa política vale para os oito agentes: lacuna essencial gera uma pergunta
+curta e específica e bloqueia o registro incompleto; lacuna secundária não
+impede o registro, mas aparece claramente na resposta. Nenhum agente inventa
+dados, fica calado sobre o que faltou ou faz mais de uma ou duas perguntas por
+vez.
 
 Codificar isso num prompt único produziria um monstro impossível de manter.
 Cada agente vive em um arquivo próprio, com seu prompt e suas regras.
@@ -688,7 +694,7 @@ chamada.
 python -m pytest
 ```
 
-**241 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
+**253 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
 substituídas por sessões HTTP falsas e o cliente da Anthropic por um duplo que
 registra os parâmetros recebidos.
 
@@ -707,7 +713,11 @@ registra os parâmetros recebidos.
 Alguns testes que valem menção:
 
 - `test_gasto_sem_valor_pede_confirmacao` — garante a regra de nunca inventar
-  um número.
+  um número e fazer uma pergunta objetiva.
+- `test_lacuna_essencial_pergunta_e_nao_grava` — impede que um item essencialmente
+  incompleto seja salvo antes da resposta.
+- `test_lacuna_secundaria_grava_e_avisa` — permite o registro útil, sem esconder
+  o detalhe secundário que não foi informado.
 - `test_falha_na_agenda_nao_perde_o_registro` — a agenda cai e o item ainda é
   gravado.
 - `test_token_nao_vaza_no_erro` — o token do Telegram não aparece na exceção.
