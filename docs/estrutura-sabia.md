@@ -303,12 +303,13 @@ seguinte, e no Telegram ela chega como mensagem nova.
 
 ## Pontos abertos
 
-- **Rotina de 11h.** O cron `0 11 * * *` chama `scripts/openclaw/rotina_sabia.sh`, que roda um
-  turno do agente `main` pedindo o resumo de receitas e lista de compras do Notion. Isso vem da
-  interpretação antiga de "Sábia", a que a Bruna corrigiu em 26/08. Com o `main` sendo agora a
-  orquestradora, esse prompt não tem dono entre os nove agentes. A rotina **não** entrega no
-  Telegram (roda sem `--deliver`, só escreve em `/opt/aria/logs/sabia-rotina.log`), então não gera
-  mensagem indevida. Ficou como está porque desativar cron de outra pessoa é decisão dela.
+- **Briefing de 8h.** O cron `0 11 * * *` (UTC) chama
+  `scripts/openclaw/rotina_sabia.sh`. A rotina lê `sabia/briefing-diario.md`, usa a sessão direta
+  da Bruna e entrega pelo Telegram ao chat configurado em `SOP_BRIEFING_CHAT_ID`. O conteúdo vem
+  em cinco blocos: clima, agenda, cardápio, pendências e combinação de até três prioridades. As
+  candidatas são tarefas abertas com prazo hoje ou amanhã; nada vira prioridade sem confirmação.
+  O resultado combinado é gravado somente em `Prazos e tarefas.Prioridade do dia`, a mesma fonte
+  das visualizações do Jardim e dos territórios. Sem resposta, a base permanece inalterada.
 - **Triagem do sop.** `src/sop/config.py` usa `OPENCLAW_AGENTE` (default `main`) esperando que o
   agente devolva um JSON de classificação. Com o `main` virando a Sábia, esse contrato mudou: a
   Sábia conversa e delega, não devolve JSON cru.
