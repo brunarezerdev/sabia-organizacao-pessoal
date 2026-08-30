@@ -26,6 +26,7 @@ from pathlib import Path
 
 from .agentes import carregar_registro
 from .automacao import Automacao
+from .cardapio import BaseNaoCompartilhada
 from .config import Config, ConfiguracaoAusente
 from .fila import Fila
 from .integracoes.ia import criar_adaptador
@@ -390,6 +391,29 @@ def cmd_simular(config: Config, args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_lista_compras(config: Config, args: argparse.Namespace) -> int:
+    """Atualiza a view de compras usando as receitas planejadas na semana."""
+    from dataclasses import asdict
+
+    from .cardapio import sincronizar_lista_compras
+    from .integracoes.notion import ClienteNotion
+
+    ids = (
+        config.notion_cardapio_database_id,
+        config.notion_receitas_database_id,
+        config.notion_ingredientes_database_id,
+    )
+    if not all(ids):
+        raise RuntimeError(
+            "Defina NOTION_CARDAPIO_DATABASE_ID, NOTION_RECEITAS_DATABASE_ID e "
+            "NOTION_INGREDIENTES_DATABASE_ID no .env."
+        )
+    referencia = date.fromisoformat(args.data) if args.data else date.today()
+    resultado = sincronizar_lista_compras(ClienteNotion(config), *ids, referencia)
+    print(json.dumps(asdict(resultado), ensure_ascii=False, indent=2))
+    return 0
+
+
 # -- entrada ----------------------------------------------------------------
 
 
@@ -436,6 +460,9 @@ def construir_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("simular", help="ritual de ponta a ponta com dados fictícios")
     p.add_argument("--domingo", help="data do ritual (AAAA-MM-DD)")
 
+    p = sub.add_parser("lista-compras", help="sincroniza compras com o cardápio semanal")
+    p.add_argument("--data", help="data dentro da semana desejada (AAAA-MM-DD)")
+
     return parser
 
 
@@ -455,12 +482,18 @@ def main(argv: list[str] | None = None) -> int:
         "regras": cmd_regras,
         "ritual": cmd_ritual,
         "simular": cmd_simular,
+        "lista-compras": cmd_lista_compras,
     }
     try:
         return comandos[args.comando](config, args)
     except ConfiguracaoAusente as erro:
         print(f"\n{erro}\n", file=sys.stderr)
         print("Rode `python -m sop diagnostico` para ver tudo que falta.", file=sys.stderr)
+        return 2
+    except BaseNaoCompartilhada as erro:
+        # Falta de permissão no Notion se resolve pela interface, não no código.
+        # Um traceback aqui só esconderia o passo a passo de quem precisa dele.
+        print(f"\n{erro}\n", file=sys.stderr)
         return 2
 
 

@@ -1,0 +1,8 @@
+[Unit]
+Description=Sincroniza a lista de compras com o cardápio semanal
+
+[Service]
+Type=oneshot
+WorkingDirectory=__SOP_DIR__
+Environment=PYTHONPATH=__SOP_DIR__/src
+ExecStart=__PYTHON__ -m sop lista-compras

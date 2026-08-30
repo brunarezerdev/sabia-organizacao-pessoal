@@ -1,0 +1,11 @@
+[Unit]
+Description=Atualiza a lista de compras após mudanças no cardápio
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=sop-lista-compras.service
+
+[Install]
+WantedBy=timers.target

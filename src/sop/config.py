@@ -49,6 +49,9 @@ class Config:
     notion_ritual_page_id: str = ""
     notion_rituais_database_id: str = ""
     notion_tarefas_database_id: str = ""
+    notion_cardapio_database_id: str = ""
+    notion_receitas_database_id: str = ""
+    notion_ingredientes_database_id: str = ""
 
     google_credentials_path: str = ""
     google_token_path: str = ""
@@ -141,6 +144,9 @@ class Config:
             notion_ritual_page_id=ler("NOTION_RITUAL_PAGE_ID"),
             notion_rituais_database_id=ler("NOTION_RITUAIS_DATABASE_ID"),
             notion_tarefas_database_id=ler("NOTION_TAREFAS_DATABASE_ID"),
+            notion_cardapio_database_id=ler("NOTION_CARDAPIO_DATABASE_ID"),
+            notion_receitas_database_id=ler("NOTION_RECEITAS_DATABASE_ID"),
+            notion_ingredientes_database_id=ler("NOTION_INGREDIENTES_DATABASE_ID"),
             google_credentials_path=ler("GOOGLE_CREDENTIALS_PATH"),
             google_token_path=ler("GOOGLE_TOKEN_PATH"),
             google_service_account_path=ler("GOOGLE_SERVICE_ACCOUNT_PATH"),
