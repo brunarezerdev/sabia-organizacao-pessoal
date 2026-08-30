@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
+from pathlib import Path
 
 import requests
 
@@ -102,3 +103,25 @@ class ClienteTelegram:
     def confirmar(self, texto: str) -> dict[str, Any]:
         """Responde no chat autorizado — usado para devolver o resultado."""
         return self.responder(self.config.telegram_chat_autorizado, texto)
+
+    def baixar_anexo(self, update: dict[str, Any], destino: Path) -> Path:
+        """Baixa foto/PDF de update autorizado sem registrar URL nem token."""
+        if not self.autorizada(update):
+            raise PermissionError("origem do anexo não autorizada")
+        msg = update.get("message", {})
+        documento = msg.get("document") or {}
+        fotos = msg.get("photo") or []
+        if documento and documento.get("mime_type") not in {"application/pdf", "image/jpeg", "image/png"}:
+            raise ValueError("tipo de anexo não aceito")
+        file_id = documento.get("file_id") or (fotos[-1].get("file_id") if fotos else "")
+        if not file_id:
+            raise ValueError("mensagem sem foto ou PDF")
+        info = self._chamar("getFile", file_id=file_id)
+        caminho = info.get("file_path", "")
+        if not caminho:
+            raise RuntimeError("Telegram não devolveu o caminho do anexo")
+        resposta = self.sessao.get(f"{BASE}/file/bot{self.config.telegram_token}/{caminho}", timeout=TIMEOUT)
+        resposta.raise_for_status()
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        destino.write_bytes(resposta.content)
+        return destino
