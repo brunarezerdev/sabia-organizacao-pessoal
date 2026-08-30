@@ -652,16 +652,22 @@ Notion, com `to_do` de verdade, não parágrafo.
 ```bash
 python -m sop ritual                        # imprime o pacote
 python -m sop ritual --domingo 2026-03-08   # em outra data
-python -m sop ritual --publicar --telegram  # anexa no Notion e envia
+python -m sop ritual --publicar --telegram  # cria o registro datado e envia
 ```
 
-`--publicar` só acrescenta blocos no fim da página do ritual. Nada é apagado nem
-reescrito.
+`--publicar` cria um registro próprio em `NOTION_RITUAIS_DATABASE_ID`, identificado
+pela propriedade `Domingo`. A execução é idempotente: se aquela data já existe,
+nada é duplicado. Os domingos anteriores recebem `Status = Fechado` e continuam
+no mesmo banco; nada é apagado. Se `NOTION_TAREFAS_DATABASE_ID` estiver definido,
+o registro relaciona as tarefas marcadas como feitas cujo prazo cai na semana,
+sem copiar os dados da base `Prazos e tarefas`.
 
-Para agendar o ritual todo domingo às 19h, sem depender de lembrar:
+Nesta instalação, `scripts/ritual_domingo.sh` é a entrada segura para o cron:
+usa a configuração do projeto, publica pela API gratuita e não envia Telegram.
+Como a VPS roda em UTC, domingo às 19h de Brasília é:
 
 ```cron
-0 19 * * 0 cd /caminho/do/projeto && python -m sop ritual --publicar --telegram
+0 22 * * 0 /bin/bash /caminho/do/projeto/scripts/ritual_domingo.sh >> /caminho/dos/logs/ritual-domingo.log 2>&1
 ```
 
 ### Ver funcionando sem configurar nada

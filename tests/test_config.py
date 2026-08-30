@@ -56,5 +56,14 @@ def test_carregar_env_inexistente_devolve_vazio(tmp_path):
 
 
 def test_do_ambiente_aceita_valores_extras():
-    config = Config.do_ambiente({"NOTION_TOKEN": "abc", "NOTION_DATABASE_ID": "def"})
+    config = Config.do_ambiente(
+        {
+            "NOTION_TOKEN": "abc",
+            "NOTION_DATABASE_ID": "def",
+            "NOTION_RITUAIS_DATABASE_ID": "rituais",
+            "NOTION_TAREFAS_DATABASE_ID": "tarefas",
+        }
+    )
     assert config.pronta("notion")
+    assert config.notion_rituais_database_id == "rituais"
+    assert config.notion_tarefas_database_id == "tarefas"

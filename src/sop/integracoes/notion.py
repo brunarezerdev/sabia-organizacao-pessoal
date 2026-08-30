@@ -33,7 +33,8 @@ configuração do motor de regras se-então e é editada à mão por quem usa:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
+import time
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -41,6 +42,7 @@ import requests
 
 from ..config import Config, exigir
 from ..modelos import Item
+from ..ritual import PacoteRitual, semana_que_comeca, semana_que_terminou
 
 BASE = "https://api.notion.com/v1"
 VERSAO_API = "2022-06-28"
@@ -63,13 +65,18 @@ class ClienteNotion:
         }
 
     def _chamar(self, metodo: str, caminho: str, corpo: dict[str, Any] | None = None) -> dict[str, Any]:
-        resposta = self.sessao.request(
-            metodo,
-            f"{BASE}{caminho}",
-            headers=self._headers,
-            json=corpo,
-            timeout=TIMEOUT,
-        )
+        for tentativa in range(4):
+            resposta = self.sessao.request(
+                metodo,
+                f"{BASE}{caminho}",
+                headers=self._headers,
+                json=corpo,
+                timeout=TIMEOUT,
+            )
+            if resposta.status_code != 429 or tentativa == 3:
+                break
+            espera = float(resposta.headers.get("Retry-After", "1") or "1")
+            time.sleep(min(max(espera, 0.1), 5.0))
         if resposta.status_code >= 400:
             detalhe = ""
             try:
@@ -182,3 +189,105 @@ class ClienteNotion:
             self._chamar("PATCH", f"/blocks/{page_id}/children", {"children": lote})
             enviados += len(lote)
         return enviados
+
+    # -- registros datados do ritual semanal --------------------------------
+
+    def prioridades_concluidas_na_semana(self, domingo: date) -> list[str]:
+        """Devolve os ids das tarefas feitas cujo prazo cai na semana fechada.
+
+        A base atual não registra a data em que o checkbox foi marcado. Por isso
+        o filtro usa o prazo, fato verificável, e não afirma quando a tarefa foi
+        concluída. Os ids alimentam uma relação do Notion; nenhum dado da tarefa
+        é copiado para o registro do ritual.
+        """
+        if not self.config.notion_tarefas_database_id:
+            return []
+        inicio, fim = semana_que_terminou(domingo)
+        filtro = {
+            "and": [
+                {"property": "Feito", "checkbox": {"equals": True}},
+                {"property": "prazo", "date": {"on_or_after": inicio.isoformat()}},
+                {"property": "prazo", "date": {"on_or_before": fim.isoformat()}},
+            ]
+        }
+        paginas = self.consultar_database(self.config.notion_tarefas_database_id, filtro)
+        return sorted({str(pagina["id"]) for pagina in paginas if pagina.get("id")})
+
+    def buscar_ritual(self, domingo: date) -> dict[str, Any] | None:
+        if not self.config.notion_rituais_database_id:
+            return None
+        paginas = self.consultar_database(
+            self.config.notion_rituais_database_id,
+            {"property": "Domingo", "date": {"equals": domingo.isoformat()}},
+            limite=1,
+        )
+        return paginas[0] if paginas else None
+
+    def fechar_rituais_anteriores(self, domingo: date) -> int:
+        """Marca registros anteriores como fechados; nunca arquiva nem apaga páginas."""
+        filtro = {
+            "and": [
+                {"property": "Domingo", "date": {"before": domingo.isoformat()}},
+                {"property": "Status", "select": {"does_not_equal": "Fechado"}},
+            ]
+        }
+        paginas = self.consultar_database(self.config.notion_rituais_database_id, filtro)
+        for pagina in paginas:
+            self._chamar(
+                "PATCH",
+                f"/pages/{pagina['id']}",
+                {"properties": {"Status": {"select": {"name": "Fechado"}}}},
+            )
+        return len(paginas)
+
+    def criar_registro_ritual(
+        self, pacote: PacoteRitual, prioridades_concluidas: list[str] | None = None
+    ) -> tuple[str, bool]:
+        """Cria uma página datada uma única vez e devolve (id, foi_criada)."""
+        if not self.config.notion_rituais_database_id:
+            raise RuntimeError("NOTION_RITUAIS_DATABASE_ID não está configurado.")
+        domingo = date.fromisoformat(pacote.domingo)
+        existente = self.buscar_ritual(domingo)
+        if existente:
+            return str(existente["id"]), False
+        inicio_fechada, fim_fechada = semana_que_terminou(domingo)
+        inicio_aberta, fim_aberta = semana_que_comeca(domingo)
+        nome = f"Ritual de domingo, {domingo.strftime('%d/%m/%Y')}"
+        blocos = pacote.para_blocos_notion()
+        # A automação não cria arte. Os callouts continuam funcionais, mas sem
+        # ícone; capas, imagens e ilustrações também não entram no payload.
+        for bloco in blocos:
+            if bloco.get("type") == "callout":
+                bloco.get("callout", {}).pop("icon", None)
+        corpo = {
+            "parent": {"database_id": self.config.notion_rituais_database_id},
+            "properties": {
+                "Nome": {"title": [{"text": {"content": nome}}]},
+                "Domingo": {"date": {"start": pacote.domingo}},
+                "Status": {"select": {"name": "Aberto"}},
+                "Semana fechada": {
+                    "date": {
+                        "start": inicio_fechada.isoformat(),
+                        "end": fim_fechada.isoformat(),
+                    }
+                },
+                "Semana aberta": {
+                    "date": {
+                        "start": inicio_aberta.isoformat(),
+                        "end": fim_aberta.isoformat(),
+                    }
+                },
+                "Prioridades concluídas": {
+                    "relation": [
+                        {"id": pagina_id}
+                        for pagina_id in (prioridades_concluidas or [])
+                    ]
+                },
+            },
+            "children": blocos[:100],
+        }
+        pagina = self._chamar("POST", "/pages", corpo)
+        blocos_restantes = blocos[100:]
+        if blocos_restantes:
+            self.anexar_blocos(str(pagina["id"]), blocos_restantes)
+        return str(pagina["id"]), True

@@ -6,6 +6,7 @@ Nenhum teste faz requisição real nem usa credencial verdadeira.
 from __future__ import annotations
 
 import json
+from datetime import date
 
 import pytest
 import requests
@@ -21,6 +22,8 @@ from sop.integracoes.google_calendar import (
 )
 from sop.integracoes.notion import ClienteNotion
 from sop.integracoes.telegram import ClienteTelegram
+from sop.regras import EventoAgenda, ItemEstoque, MotorDeRegras, Regra
+from sop.ritual import CHECKLIST_ABERTURA, Ritual
 
 
 class RespostaFalsa:
@@ -183,6 +186,159 @@ def test_notion_erro_traz_a_mensagem_da_api(config_falsa, item):
     sessao = SessaoFalsa(RespostaFalsa({"message": "Could not find database"}, 404))
     with pytest.raises(RuntimeError, match="Could not find database"):
         ClienteNotion(config_falsa, sessao=sessao).criar_item(item)
+
+
+def test_notion_cria_um_registro_datado_do_ritual_sem_duplicar(config_falsa):
+    config = Config(
+        notion_token=config_falsa.notion_token,
+        notion_database_id=config_falsa.notion_database_id,
+        notion_rituais_database_id="rituais-db",
+    )
+    motor = MotorDeRegras(
+        [
+            Regra(
+                nome="Preparar consulta",
+                se="Quando houver consulta",
+                entao="Separar documentos",
+                origem="Agenda",
+                palavras_chave=("consulta",),
+            ),
+            Regra(
+                nome="Repor essencial",
+                se="Quando um essencial estiver acabando",
+                entao="Comprar o essencial",
+                origem="Estoque",
+                palavras_chave=("acabando",),
+            ),
+        ]
+    )
+    pacote = Ritual(motor).pacote(
+        date(2026, 3, 8),
+        eventos_passados=[EventoAgenda("Aula", "2026-03-03")],
+        eventos_futuros=[EventoAgenda("Consulta", "2026-03-12")],
+        estoque=[ItemEstoque("Arroz", "acabando")],
+    )
+    sessao = SessaoFalsa(
+        RespostaFalsa({"results": [], "has_more": False}),
+        RespostaFalsa({"id": "ritual-2026-03-08"}),
+    )
+
+    pagina_id, criada = ClienteNotion(config, sessao=sessao).criar_registro_ritual(
+        pacote, ["tarefa-1"]
+    )
+
+    assert (pagina_id, criada) == ("ritual-2026-03-08", True)
+    corpo = sessao.chamadas[1]["json"]
+    assert corpo["properties"]["Domingo"]["date"]["start"] == "2026-03-08"
+    assert corpo["properties"]["Status"]["select"]["name"] == "Aberto"
+    assert corpo["properties"]["Nome"]["title"][0]["text"]["content"] == (
+        "Ritual de domingo, 08/03/2026"
+    )
+    assert corpo["properties"]["Semana fechada"]["date"] == {
+        "start": "2026-03-02", "end": "2026-03-08"
+    }
+    assert corpo["properties"]["Semana aberta"]["date"] == {
+        "start": "2026-03-09", "end": "2026-03-15"
+    }
+    assert corpo["properties"]["Prioridades concluídas"]["relation"] == [
+        {"id": "tarefa-1"}
+    ]
+    assert all(
+        "icon" not in bloco.get("callout", {}) for bloco in corpo["children"]
+    )
+    textos = [
+        bloco[bloco["type"]]["rich_text"][0]["text"]["content"]
+        for bloco in corpo["children"]
+    ]
+    assert any("2026-03-03, Aula" in texto for texto in textos)
+    assert any("2026-03-12, Consulta" in texto for texto in textos)
+    assert any("Separar documentos" in texto for texto in textos)
+    assert any("Comprar o essencial" in texto for texto in textos)
+    assert all(item in textos for item in CHECKLIST_ABERTURA)
+    assert {"1. ", "2. ", "3. "} <= set(textos)
+
+
+def test_notion_nao_duplica_ritual_da_mesma_data(config_falsa):
+    config = Config(
+        notion_token=config_falsa.notion_token,
+        notion_database_id=config_falsa.notion_database_id,
+        notion_rituais_database_id="rituais-db",
+    )
+    pacote = Ritual(MotorDeRegras([])).pacote(
+        date(2026, 3, 8), eventos_passados=[], eventos_futuros=[]
+    )
+    sessao = SessaoFalsa(
+        RespostaFalsa({"results": [{"id": "ja-existe"}], "has_more": False})
+    )
+
+    assert ClienteNotion(config, sessao=sessao).criar_registro_ritual(pacote) == (
+        "ja-existe", False
+    )
+    assert len(sessao.chamadas) == 1
+
+
+def test_notion_filtra_tarefas_feitas_pelo_prazo_da_semana(config_falsa):
+    config = Config(
+        notion_token=config_falsa.notion_token,
+        notion_database_id=config_falsa.notion_database_id,
+        notion_tarefas_database_id="tarefas-db",
+    )
+    sessao = SessaoFalsa(
+        RespostaFalsa(
+            {
+                "results": [
+                    {"id": "tarefa-1"},
+                    {"id": "tarefa-1"},
+                ],
+                "has_more": False,
+            }
+        )
+    )
+
+    assert ClienteNotion(config, sessao=sessao).prioridades_concluidas_na_semana(
+        date(2026, 3, 8)
+    ) == ["tarefa-1"]
+    filtro = sessao.chamadas[0]["json"]["filter"]["and"]
+    assert {item["property"] for item in filtro} == {"Feito", "prazo"}
+
+
+def test_notion_fecha_rituais_anteriores_sem_apagar(config_falsa):
+    config = Config(
+        notion_token=config_falsa.notion_token,
+        notion_database_id=config_falsa.notion_database_id,
+        notion_rituais_database_id="rituais-db",
+    )
+    sessao = SessaoFalsa(
+        RespostaFalsa(
+            {
+                "results": [{"id": "ritual-antigo-1"}, {"id": "ritual-antigo-2"}],
+                "has_more": False,
+            }
+        ),
+        RespostaFalsa({"id": "ritual-antigo-1"}),
+        RespostaFalsa({"id": "ritual-antigo-2"}),
+    )
+
+    fechados = ClienteNotion(config, sessao=sessao).fechar_rituais_anteriores(
+        date(2026, 3, 8)
+    )
+
+    assert fechados == 2
+    filtro = sessao.chamadas[0]["json"]["filter"]["and"]
+    assert filtro == [
+        {"property": "Domingo", "date": {"before": "2026-03-08"}},
+        {"property": "Status", "select": {"does_not_equal": "Fechado"}},
+    ]
+    assert [chamada["metodo"] for chamada in sessao.chamadas] == [
+        "POST",
+        "PATCH",
+        "PATCH",
+    ]
+    assert all(
+        chamada["json"]
+        == {"properties": {"Status": {"select": {"name": "Fechado"}}}}
+        for chamada in sessao.chamadas[1:]
+    )
 
 
 # -- Google Agenda -----------------------------------------------------------

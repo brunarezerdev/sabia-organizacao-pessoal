@@ -47,6 +47,8 @@ class Config:
     notion_database_id: str = ""
     notion_regras_database_id: str = ""
     notion_ritual_page_id: str = ""
+    notion_rituais_database_id: str = ""
+    notion_tarefas_database_id: str = ""
 
     google_credentials_path: str = ""
     google_token_path: str = ""
@@ -137,6 +139,8 @@ class Config:
             notion_database_id=ler("NOTION_DATABASE_ID"),
             notion_regras_database_id=ler("NOTION_REGRAS_DATABASE_ID"),
             notion_ritual_page_id=ler("NOTION_RITUAL_PAGE_ID"),
+            notion_rituais_database_id=ler("NOTION_RITUAIS_DATABASE_ID"),
+            notion_tarefas_database_id=ler("NOTION_TAREFAS_DATABASE_ID"),
             google_credentials_path=ler("GOOGLE_CREDENTIALS_PATH"),
             google_token_path=ler("GOOGLE_TOKEN_PATH"),
             google_service_account_path=ler("GOOGLE_SERVICE_ACCOUNT_PATH"),
@@ -178,6 +182,8 @@ class Config:
             "NOTION_DATABASE_ID": self.notion_database_id,
             "NOTION_REGRAS_DATABASE_ID": self.notion_regras_database_id,
             "NOTION_RITUAL_PAGE_ID": self.notion_ritual_page_id,
+            "NOTION_RITUAIS_DATABASE_ID": self.notion_rituais_database_id,
+            "NOTION_TAREFAS_DATABASE_ID": self.notion_tarefas_database_id,
             "GOOGLE_CREDENTIALS_PATH": self.google_credentials_path,
             "GOOGLE_TOKEN_PATH": self.google_token_path,
             "GOOGLE_SERVICE_ACCOUNT_PATH": self.google_service_account_path,

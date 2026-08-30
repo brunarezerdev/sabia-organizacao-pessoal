@@ -304,18 +304,26 @@ def cmd_regras(config: Config, _args: argparse.Namespace) -> int:
 def _publicar(config: Config, pacote, args: argparse.Namespace) -> None:
     """Manda o pacote para o Notion e para o Telegram, se pedirem."""
     if args.publicar:
-        if not (config.pronta("notion") and config.notion_ritual_page_id):
+        if not (config.pronta("notion") and config.notion_rituais_database_id):
             print(
-                "Aviso: para publicar defina NOTION_TOKEN e NOTION_RITUAL_PAGE_ID.",
+                "Aviso: para publicar defina NOTION_TOKEN e NOTION_RITUAIS_DATABASE_ID.",
                 file=sys.stderr,
             )
         else:
             from .integracoes.notion import ClienteNotion
 
-            enviados = ClienteNotion(config).anexar_blocos(
-                config.notion_ritual_page_id, pacote.para_blocos_notion()
-            )
-            print(f"\n{enviados} blocos acrescentados na página do ritual.")
+            cliente = ClienteNotion(config)
+            domingo = date.fromisoformat(pacote.domingo)
+            prioridades = cliente.prioridades_concluidas_na_semana(domingo)
+            pagina_id, criada = cliente.criar_registro_ritual(pacote, prioridades)
+            # Fechar os anteriores também numa reexecução: se a criação da
+            # página tiver funcionado e a etapa seguinte tiver falhado, o
+            # próximo cron conclui o trabalho sem duplicar o domingo atual.
+            fechados = cliente.fechar_rituais_anteriores(domingo)
+            acao = "criado" if criada else "já existia; nada foi duplicado"
+            print(f"\nRitual {pacote.domingo}: {acao} ({pagina_id}).")
+            if fechados:
+                print(f"{fechados} ritual(is) anterior(es) marcado(s) como fechado(s).")
 
     if args.telegram:
         if not config.pronta("telegram"):
@@ -329,7 +337,17 @@ def _publicar(config: Config, pacote, args: argparse.Namespace) -> None:
 
 def cmd_ritual(config: Config, args: argparse.Namespace) -> int:
     """Fecha a semana que terminou e abre a que começa."""
-    motor, _ = _carregar_motor(config)
+    if args.publicar and not config.pronta("regras"):
+        # Exemplos servem para demonstração, nunca para preencher um registro
+        # pessoal real. Sem a base de regras, publica apenas os dados verificáveis.
+        motor = MotorDeRegras([])
+        print(
+            "Aviso: base de Regras não configurada; o registro real será publicado "
+            "sem efeitos derivados, para não usar dados fictícios.",
+            file=sys.stderr,
+        )
+    else:
+        motor, _ = _carregar_motor(config)
 
     agenda = None
     if config.pronta("google_calendar"):
@@ -412,7 +430,7 @@ def construir_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("ritual", help="monta o pacote do ritual de domingo")
     p.add_argument("--domingo", help="data do ritual (AAAA-MM-DD). Padrão: o próximo domingo")
-    p.add_argument("--publicar", action="store_true", help="anexa o pacote na página do Notion")
+    p.add_argument("--publicar", action="store_true", help="publica o registro datado no Notion")
     p.add_argument("--telegram", action="store_true", help="envia o pacote pelo Telegram")
 
     p = sub.add_parser("simular", help="ritual de ponta a ponta com dados fictícios")
