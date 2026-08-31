@@ -439,20 +439,19 @@ python -m sop diagnostico    # mostra qual backend de IA está ativo
 
 E, no Telegram, mande `/start` para o seu bot.
 
-### Ponto a confirmar antes de usar em produção
+### Ligar a camada de IA ao OpenClaw
 
-O backend `openclaw` da camada de IA precisa de `OPENCLAW_COMANDO` no `.env`:
-a linha de comando que invoca o agente principal de forma não interativa. Essa
-invocação **não foi verificada** e por isso não há um padrão chutado no código
-— enquanto a variável estiver vazia, o sistema usa o heurístico.
-
-Confira na sua máquina com `openclaw agents --help` e preencha:
+O backend `openclaw` precisa de `OPENCLAW_COMANDO` no `.env`: a linha de comando
+que invoca o agente principal de forma não interativa. O CLI da 2026.6.5 não lê
+stdin e embrulha a resposta num envelope JSON, então o projeto traz a costura
+pronta em `scripts/openclaw/classificar.sh`:
 
 ```bash
-OPENCLAW_COMANDO=openclaw agents run {agente} --non-interactive
+OPENCLAW_COMANDO=bash scripts/openclaw/classificar.sh {agente}
 ```
 
-Este e os outros pontos em aberto estão listados em
+Enquanto a variável estiver vazia, o sistema usa o heurístico e avisa em
+`python -m sop diagnostico`. Os pontos que continuam em aberto estão em
 [`docs/openclaw.md`](docs/openclaw.md#pontos-a-confirmar).
 
 ---
@@ -545,13 +544,22 @@ Preencha o `.env` seguindo os passos abaixo.
 </details>
 
 <details>
-<summary><b>Anthropic</b> — ANTHROPIC_API_KEY (opcional)</summary>
+<summary><b>Rotas de IA alternativas</b> — OPENAI_API_KEY / ANTHROPIC_API_KEY (opcionais)</summary>
 
-1. Crie uma chave em <https://console.anthropic.com/>.
-2. Cole em `ANTHROPIC_API_KEY` e instale o SDK: `pip install anthropic`.
+**A rota em produção não usa nenhuma das duas.** Ela é o OpenClaw com o provider
+`openai` (Codex), que autentica por OAuth device-code sobre a assinatura — ver
+[Instalar e rodar o OpenClaw](#instalar-e-rodar-o-openclaw). Estas chaves só
+entram em cena para quem preferir chamar a API direto, sem instalar o OpenClaw.
 
-Sem essa chave o sistema usa o classificador heurístico local e continua
-funcionando.
+- **OpenAI:** crie uma chave em <https://platform.openai.com/api-keys>, cole em
+  `OPENAI_API_KEY` e instale o SDK: `pip install openai`. Não é a rota Codex — o
+  Codex autentica por OAuth e não aceita chave de API.
+- **Anthropic:** crie uma chave em <https://console.anthropic.com/>, cole em
+  `ANTHROPIC_API_KEY` e instale o SDK: `pip install anthropic`.
+
+A ordem de escolha é `openclaw → openai → anthropic → heuristica`, e
+`IA_BACKEND` força um backend específico. Sem nenhum deles o sistema usa o
+classificador heurístico local e continua funcionando.
 </details>
 
 ### 4. Verificar

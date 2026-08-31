@@ -38,13 +38,18 @@ existente. Bloquear por exceção depende de lembrar de cada caso.
 |---|---|---|---|
 | Telegram | Token de bot | `.env` | `/revoke` no @BotFather |
 | Notion | Token de integração | `.env` | Regerar em my-integrations |
-| Anthropic | Chave de API | `.env` | Regerar no console |
+| IA — OpenClaw, rota Codex (**em uso**) | Nenhuma. OAuth device-code sobre a assinatura | sessão do CLI, fora do repositório | Revogar o dispositivo na conta OpenAI |
+| IA — OpenAI ou Anthropic por chave (alternativas) | Chave de API | `.env`, vazias na instalação em uso | Regerar no console do provedor |
 | Google | Refresh token | arquivo separado, `chmod 600` | Revogar em myaccount.google.com/permissions |
 
-O Google é o único que não guarda a credencial de longo prazo no `.env` — o
-refresh token fica em arquivo próprio, fora do repositório, com permissão 600. O
-access token, que é o que efetivamente autentica as chamadas, existe apenas em
-memória e é renovado a cada sessão.
+Duas das quatro não guardam credencial de longo prazo no `.env`, e por motivos
+diferentes. No Google, o refresh token fica em arquivo próprio, fora do
+repositório, com permissão 600; o access token, que é o que efetivamente
+autentica as chamadas, existe apenas em memória e é renovado a cada sessão. Na
+IA, não há chave nenhuma para guardar: a rota em produção é o OpenClaw com o
+provider `openai` (Codex), autenticado uma única vez por device-code, e a sessão
+é responsabilidade do CLI. `ANTHROPIC_API_KEY` e `OPENAI_API_KEY` só passam a
+existir de verdade se alguém optar pela rota alternativa por chave.
 
 ---
 
@@ -152,7 +157,8 @@ padrões proibidos.
 
 ## 7. O que a IA recebe
 
-A camada de classificação envia para a API da Anthropic:
+A camada de classificação envia ao provedor de IA em uso — hoje o OpenClaw com a
+rota Codex, e o mesmo vale para as rotas alternativas por chave:
 
 - o texto da mensagem;
 - o catálogo de agentes (nomes, domínios e categorias);

@@ -141,36 +141,39 @@ ou na automação.
 
 ---
 
+## Ponto resolvido — invocação não interativa
+
+Este ponto ficou em aberto enquanto o OpenClaw não estava instalado. **Foi
+resolvido** na instalação em produção, e o que se descobriu está em
+`scripts/openclaw/classificar.sh`.
+
+O backend `openclaw` entrega a instrução pela entrada padrão e espera ler o JSON
+da classificação na saída padrão. O CLI da 2026.6.5 não faz nem uma coisa nem
+outra: `openclaw agent` não lê stdin (sai com `Missing required option -m,
+--message <text>`) e, com `--json`, o que sai é o envelope do CLI, com a
+resposta do agente aninhada dentro.
+
+`classificar.sh` é a costura: lê stdin, passa por `--message` e devolve só o
+texto que o agente produziu. Sem ele, o `extrair_json()` receberia o envelope
+em vez da classificação e **toda** mensagem cairia no heurístico sem ninguém
+perceber. É por isso que a variável aponta para o script, e não para o CLI:
+
+```bash
+OPENCLAW_COMANDO=bash scripts/openclaw/classificar.sh {agente}
+```
+
+Trocar de versão de CLI mexe nesse script, não no código Python. Confirme com
+`python -m sop diagnostico`, que mostra qual backend responderia agora, e com
+`python -m sop classificar "reunião quinta às 14h"`.
+
+---
+
 ## Pontos a confirmar
 
-Coisas que **não foram verificadas na prática** porque o OpenClaw não está
-instalado na máquina onde este código foi escrito. Estão marcadas aqui em vez
-de documentadas como se fossem certeza.
+O que **ainda não foi verificado na prática**, marcado aqui em vez de
+documentado como se fosse certeza.
 
-### 1. Invocação não interativa para uma classificação
-
-O backend `openclaw` precisa rodar o agente principal de forma não interativa,
-mandando a instrução pela entrada padrão e lendo JSON da saída. O comando exato
-não foi confirmado, então **não há um padrão chutado no código**: a variável
-`OPENCLAW_COMANDO` começa vazia e, sem ela, o sistema usa o heurístico.
-
-Para resolver, na máquina com o CLI instalado:
-
-```bash
-openclaw agents --help
-openclaw --help | grep -iE "run|send|prompt|message"
-```
-
-Descoberto o comando, preencha no `.env`, com `{agente}` no lugar do id:
-
-```bash
-OPENCLAW_COMANDO=openclaw agents run {agente} --non-interactive
-```
-
-Depois confirme com `python -m sop diagnostico`, que mostra qual backend
-responderia agora, e com `python -m sop classificar "reunião quinta às 14h"`.
-
-### 2. Restrição de tools na registração
+### 1. Restrição de tools na registração
 
 O roteiro de referência documenta `openclaw agents add <id> --non-interactive
 --workspace <ws> --model <modelo>`. Uma flag `--tools` **não aparece lá**, e o
@@ -186,7 +189,7 @@ Em ambos os casos as tools continuam escritas no `SOUL.md` de cada agente, o
 que restringe por instrução. A confirmar: se a versão instalada aceita a flag,
 ou qual é o subcomando que aplica a restrição de verdade.
 
-### 3. Versão do CLI
+### 2. Versão do CLI
 
 O bootstrap fixa `openclaw@2026.6.5`, seguindo o repositório de referência, que
 registra que `@latest` quebra o polling do Telegram. Se a Bruna quiser uma
@@ -202,7 +205,7 @@ versão mais nova, vale conferir antes se o polling continua funcionando.
 | `OpenClaw config is invalid: <root>: Invalid input` | Alguém escreveu o `openclaw.json` à mão |
 | `Refusing to replace agents.list` | Tentou registrar subagente com `config patch`; use `agents add` |
 | Subagente não responde | Confira `openclaw agents list` e se o `SOUL.md` do workspace existe |
-| Classificação caindo sempre no heurístico | `OPENCLAW_COMANDO` vazio; ver "Pontos a confirmar" |
+| Classificação caindo sempre no heurístico | `OPENCLAW_COMANDO` vazio, ou apontando para o CLI cru em vez de `scripts/openclaw/classificar.sh` |
 | Bot não responde no Telegram | Seu id não está em `allowFrom`; rode `configurar_telegram.sh` de novo |
 
 Para voltar a um estado bom:

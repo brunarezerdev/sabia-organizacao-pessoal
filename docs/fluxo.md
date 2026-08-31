@@ -12,7 +12,8 @@ graph LR
     TG -->|long polling| CAP[Captura]
     CAP --> FILA[(Fila durável<br/>em disco)]
     FILA --> ORQ{Orquestradora}
-    ORQ <-->|classifica| IA[Anthropic<br/>Messages API]
+    ORQ <-->|classifica| IA[Camada de IA<br/>OpenClaw · provider openai, rota Codex]
+    IA -.->|só se o ativo faltar| FB[Rotas alternativas<br/>OpenAI ou Anthropic por chave<br/>· heurística local]
     ORQ --> NOT[Notion API<br/>banco no-code]
     ORQ -->|só se tiver data| GC[Google Calendar API]
     ORQ -->|confirmação| TG
@@ -20,10 +21,15 @@ graph LR
     style ORQ fill:#fff3cd,stroke:#856404,stroke-width:2px
     style FILA fill:#e2e3e5,stroke:#383d41
     style IA fill:#d1ecf1,stroke:#0c5460
+    style FB fill:#f4f1ea,stroke:#8a8378,stroke-dasharray: 5 3
     style NOT fill:#d4edda,stroke:#155724
     style GC fill:#d4edda,stroke:#155724
     style TG fill:#cce5ff,stroke:#004085
 ```
+
+A camada de IA é uma só do ponto de vista da orquestradora. O caminho ativo é o
+OpenClaw, onde a rota Codex está autenticada; as rotas por chave de API e a
+heurística local existem como degradação, não como caminho principal.
 
 ---
 
@@ -37,7 +43,7 @@ sequenceDiagram
     participant C as Captura
     participant F as Fila
     participant O as Orquestradora
-    participant IA as Camada de IA
+    participant IA as Camada de IA · OpenClaw
     participant N as Notion
     participant G as Google Agenda
 
@@ -58,7 +64,7 @@ sequenceDiagram
 
     O->>IA: classificar(texto, catálogo de agentes, hoje)
     IA-->>O: {agente, categoria, título, data, hora}
-    Note right of IA: validado por JSON Schema<br/>na própria API
+    Note right of IA: rota Codex: esquema fixo na instrução<br/>resposta ilegível cai no heurístico<br/>nas rotas por chave, a API valida o schema
 
     O->>O: o agente existe? a categoria é dele?
 
@@ -90,11 +96,13 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    M[Mensagem] --> IA{Camada de IA<br/>disponível?}
-    IA -->|com chave| ANT[Anthropic<br/>structured output]
-    IA -->|sem chave| HEU[Heurística local<br/>palavras-chave]
+    M[Mensagem] --> IA{Qual backend<br/>está disponível?}
+    IA ==>|caminho ativo| OC[OpenClaw · rota Codex<br/>OPENCLAW_COMANDO]
+    IA -.->|sem OpenClaw, com chave| KEY[OpenAI ou Anthropic<br/>structured output]
+    IA -.->|sem nada configurado| HEU[Heurística local<br/>palavras-chave]
 
-    ANT --> VAL{Agente existe<br/>no registro?}
+    OC --> VAL{Agente existe<br/>no registro?}
+    KEY --> VAL
     HEU --> VAL
 
     VAL -->|sim| CAT{Categoria<br/>pertence a ele?}
@@ -120,11 +128,16 @@ flowchart TD
     NOT --> FIM
     GC --> FIM
 
-    style ANT fill:#d1ecf1,stroke:#0c5460
-    style HEU fill:#e2e3e5,stroke:#383d41
+    style OC fill:#d1ecf1,stroke:#0c5460,stroke-width:3px
+    style KEY fill:#f4f1ea,stroke:#8a8378,stroke-dasharray: 5 3
+    style HEU fill:#e2e3e5,stroke:#383d41,stroke-dasharray: 5 3
     style PAD fill:#f8d7da,stroke:#721c24
     style AJU fill:#fff3cd,stroke:#856404
 ```
+
+A seta grossa é a única rota em uso hoje. As pontilhadas só entram em cena se a
+anterior faltar — a ordem é `openclaw → openai → anthropic → heuristica`, e o
+sistema nunca para por ausência de credencial, só perde precisão.
 
 ---
 
@@ -163,8 +176,13 @@ flowchart LR
         N3[integração compartilhada<br/>com a database] --> N2
     end
 
-    subgraph AN[Anthropic]
-        A1[ANTHROPIC_API_KEY] --> A2[header x-api-key<br/>pelo SDK]
+    subgraph IA[IA — OpenClaw, rota Codex · ATIVA]
+        I1[login device-code<br/>uma vez, no CLI] -->|assinatura ChatGPT Plus| I2[sessão guardada<br/>pelo OpenClaw]
+        I2 --> I3[nenhuma chave<br/>de IA no .env]
+    end
+
+    subgraph AL[IA — rotas alternativas por chave]
+        A1[OPENAI_API_KEY<br/>ou ANTHROPIC_API_KEY] -.-> A2[header pelo SDK<br/>só se o OpenClaw faltar]
     end
 
     subgraph GO[Google — OAuth 2.0]
@@ -173,9 +191,17 @@ flowchart LR
         G3 --> G4[Authorization:<br/>Bearer]
     end
 
+    style I3 fill:#d1ecf1,stroke:#0c5460,stroke-width:3px
+    style A1 fill:#f4f1ea,stroke:#8a8378,stroke-dasharray: 5 3
+    style A2 fill:#f4f1ea,stroke:#8a8378,stroke-dasharray: 5 3
     style G2 fill:#fff3cd,stroke:#856404
     style G3 fill:#d4edda,stroke:#155724
 ```
+
+A rota de IA em produção não tem chave para vazar: o Codex autentica por OAuth
+device-code, sobre a assinatura, e a sessão fica com o CLI do OpenClaw. As
+variáveis `OPENAI_API_KEY` e `ANTHROPIC_API_KEY` existem no `.env.example` para
+quem preferir a rota por chave, e estão vazias na instalação em uso.
 
 ---
 

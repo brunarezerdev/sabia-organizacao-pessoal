@@ -111,10 +111,23 @@ microssegundo acontecem em rajada de mensagens e em teste.
 
 ---
 
-## Decisão 4 — dois backends de classificação
+## Decisão 4 — quatro backends de classificação, com um só ativo
 
-**Decisão:** `ClassificadorAnthropic` e `ClassificadorHeuristico` implementam a
-mesma interface. `criar_adaptador()` escolhe o disponível.
+**Decisão:** `ClassificadorOpenClaw`, `ClassificadorOpenAI`,
+`ClassificadorAnthropic` e `ClassificadorHeuristico` implementam a mesma
+interface. `criar_adaptador()` escolhe o primeiro disponível na ordem
+`openclaw → openai → anthropic → heuristica`, e `IA_BACKEND` força um quando
+preciso.
+
+**Qual está em uso:** o `openclaw`. É ele que roda em produção, porque é onde o
+provedor escolhido está autenticado — provider `openai`, rota Codex, por OAuth
+device-code sobre a assinatura. Esse backend não conhece chave nenhuma: monta a
+instrução, entrega ao CLI pela entrada padrão e lê o JSON da saída. Trocar de
+provedor é um `openclaw models set`, sem tocar em uma linha do código Python.
+
+Os outros três não são caminhos paralelos, são degradação em ordem. As rotas
+`openai` e `anthropic` chamam a API direto por chave e existem para quem não
+quiser instalar o OpenClaw; a `heuristica` é o piso que sempre funciona.
 
 **Por quê:**
 
@@ -123,8 +136,10 @@ mesma interface. `criar_adaptador()` escolhe o disponível.
 - **Testabilidade.** A suíte inteira roda sem rede e sem custo.
 - **Resiliência.** Sem chave, sem crédito ou com a API fora do ar, o sistema
   degrada em vez de parar.
+- **Provedor trocável.** A orquestradora consome uma interface, não um SDK. Nenhum
+  outro módulo sabe qual backend respondeu — só o campo `origem` denuncia.
 
-**Preço:** duas implementações para manter, e a heurística é claramente pior.
+**Preço:** quatro implementações para manter, e a heurística é claramente pior.
 Aceitável — ela existe para o sistema nunca ficar de pé sem funcionar.
 
 **Detalhe de implementação:** a heurística também é o fallback quando o modelo
@@ -135,8 +150,10 @@ exceção nem resposta vazia.
 
 ## Decisão 5 — structured output em vez de parsing
 
-**Decisão:** a chamada à Messages API usa `output_config.format` com um JSON
-Schema. A validação acontece na API.
+**Decisão:** o mesmo `ESQUEMA_CLASSIFICACAO` governa os três backends de IA. Nas
+rotas por chave ele vai declarado na chamada — `response_format.json_schema` na
+OpenAI, `output_config.format` na Messages API da Anthropic — e a validação
+acontece na API.
 
 **Alternativa descartada:** pedir JSON no prompt e fazer `json.loads` na
 resposta.
@@ -145,6 +162,14 @@ resposta.
 exatamente esse "maior parte" que gera bug intermitente — o modelo embrulha em
 bloco de código, adiciona um comentário, ou muda um nome de campo. Com o schema
 declarado, a API garante o formato e o código não precisa de parsing defensivo.
+
+**O que muda na rota ativa:** o backend `openclaw` fala com um CLI, não com uma
+API que aceite schema. Ali o esquema vai na instrução e o `extrair_json()`
+tolera a moldura — cerca de código ou frase de cortesia em volta do objeto. Se
+mesmo assim a saída for ilegível, o heurístico assume e o item entra marcado com
+`origem: heuristica`, em vez de o registro da pessoa se perder. É por isso que a
+função de parsing existe apesar do structured output: ela cobre justamente o
+caminho que está em produção.
 
 **O que ainda foi preciso validar no código:** o schema garante o *formato*, não
 a *semântica*. O modelo pode devolver um agente que não existe. A orquestradora
@@ -204,8 +229,12 @@ pela metade.
 
 ## Decisão 9 — só `requests` como dependência obrigatória
 
-**Decisão:** `requests` é a única dependência obrigatória. `anthropic` e
-`google-auth-oauthlib` são opcionais.
+**Decisão:** `requests` é a única dependência obrigatória. `openai`, `anthropic`
+e `google-auth-oauthlib` são opcionais.
+
+Vale notar que a rota de IA em produção não adiciona dependência Python nenhuma:
+o backend `openclaw` conversa com um CLI por `subprocess`, então os SDKs só
+fazem falta para quem escolher uma das rotas alternativas por chave.
 
 **Por quê:** o Google Calendar precisa de três chamadas REST. Trazer
 `google-api-python-client` (que arrasta `httplib2`, `google-auth`, `protobuf`)
