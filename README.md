@@ -1,943 +1,311 @@
 # Sábia
 
 **Inteligência para cultivar a vida.**
+Projeto acadêmico desenvolvido por **Bruna Rezer**.
 
-Sábia é um sistema de organização pessoal em que a pessoa escreve uma frase em
-linguagem natural no Telegram e o sistema decide sozinho o que aquilo é, onde
-guardar e se vira compromisso na agenda.
+A Sábia é uma central inteligente de organização pessoal. A pessoa envia uma
+mensagem em linguagem natural pelo Telegram; a aplicação classifica o pedido,
+registra a informação em bases no-code do Notion e, quando há um compromisso
+com data, cria o evento na Google Agenda. Um dashboard web reúne informações
+financeiras de demonstração em uma interface responsiva.
 
-> "Reunião com o cliente na quinta às 14h"
-> → classificado como **compromisso** → registrado no Notion → evento criado na Google Agenda
+> Exemplo: “Reunião com o cliente na quinta às 14h” → compromisso no Notion →
+> evento na Google Agenda → confirmação no Telegram.
 
-Sem formulário, sem categoria para escolher, sem app para abrir. A fricção de
-registrar é o que faz as pessoas abandonarem sistemas de organização; a ideia
-aqui é reduzir essa fricção a zero.
+[Abrir o dashboard DEMO](https://sabia-dashboard-demo.vercel.app) ·
+[Ver o fluxo detalhado](docs/fluxo.md) ·
+[Ver a documentação de arquitetura](docs/arquitetura.md)
 
----
+## Problema e solução
 
-## Onde está cada requisito do trabalho
+Informações pessoais chegam em momentos e formatos diferentes e acabam
+espalhadas entre conversas, agenda, listas e anotações. Além do retrabalho, a
+necessidade de decidir onde guardar cada item aumenta a chance de esquecimento
+e erro.
 
-Atalho para quem vai avaliar. Cada linha aponta o arquivo que implementa o
-requisito e o teste que prova que ele funciona.
+A Sábia reduz essa fricção com um único ponto de entrada. A central:
 
-| Requisito | Onde está no código | Teste |
-|---|---|---|
-| **Central Inteligente de Integração** — uma camada que recebe, entende e distribui | `src/sop/orquestradora.py` (decide) e `src/sop/automacao.py` (executa o fluxo inteiro) | `tests/test_automacao.py` |
-| **API 1 — Telegram Bot API** (entrada) | `src/sop/integracoes/telegram.py` | `tests/test_integracoes.py` |
-| **API 2 — Google Calendar API v3** (saída) | `src/sop/integracoes/google_calendar.py`, OAuth em `scripts/autorizar_google.py` | `tests/test_integracoes.py`, `tests/test_gcal_mcp.py` |
-| **API 3 — OpenAI, rota Codex** (classificação; além do mínimo pedido) | `src/sop/integracoes/ia.py`, `src/sop/openclaw.py` | `tests/test_classificacao.py`, `tests/test_openclaw.py` |
-| **Banco de dados no-code — Notion** | `src/sop/integracoes/notion.py`, preparação das bases em `scripts/preparar_notion.py` e `scripts/preparar_rituais_notion.py` | `tests/test_integracoes.py` |
-| **Prova da cadeia ponta a ponta** com as três integrações reais | `scripts/provar_cadeia.py` | evidência registrada em [`docs/evidencias/`](docs/evidencias/) |
+1. recebe e autoriza a mensagem pelo Telegram;
+2. preserva a tarefa em uma fila local durável;
+3. usa a rota ativa **OpenClaw com provider OpenAI/Codex** para compreender e
+   encaminhar o pedido;
+4. grava o item estruturado no Notion;
+5. cria um evento na Google Agenda quando a classificação exige agenda;
+6. devolve uma confirmação objetiva para a pessoa.
 
-O trabalho pede duas ou mais APIs integradas; este projeto integra quatro, com
-quatro mecanismos de autenticação diferentes. O detalhamento está em
-[APIs utilizadas e justificativa](#apis-utilizadas-e-justificativa).
+O projeto atende ao enunciado ao integrar mais de duas APIs, autenticar cada
+serviço, tratar os dados, persistir em banco no-code, automatizar o fluxo e
+oferecer uma interface de consulta.
 
-Para ver a cadeia rodando sem configurar credencial nenhuma:
+## Funcionalidades entregues
 
-```bash
-pip install -e ".[dev]" && python -m sop demo
-```
-
----
-
-## Índice
-
-- [Onde está cada requisito do trabalho](#onde-está-cada-requisito-do-trabalho)
-- [Descrição da solução](#descrição-da-solução)
-- [APIs utilizadas e justificativa](#apis-utilizadas-e-justificativa)
-- [Arquitetura e fluxo de integração](#arquitetura-e-fluxo-de-integração)
-- [Os agentes](#os-agentes)
-- [Autenticação e segurança](#autenticação-e-segurança)
-- [Instalar e rodar o OpenClaw](#instalar-e-rodar-o-openclaw)
-- [Como executar](#como-executar)
-- [Automação de ponta a ponta](#automação-de-ponta-a-ponta)
-- [O ciclo diário: briefing da manhã](#o-ciclo-diário-briefing-da-manhã)
-- [O ciclo semanal: regras se-então e ritual de domingo](#o-ciclo-semanal-regras-se-então-e-ritual-de-domingo)
-- [Testes](#testes)
-- [Prints](#prints)
-- [O que ainda é parcial](#o-que-ainda-é-parcial)
-
----
-
-## Descrição da solução
-
-O problema que este projeto resolve não é falta de ferramenta de organização —
-é excesso. A informação chega o dia todo em formatos diferentes (um gasto, uma
-consulta marcada, um item que acabou na despensa, uma tarefa de projeto) e cada
-uma dessas coisas mora em um app diferente. O custo de decidir *onde* registrar
-é maior do que o de registrar, então nada é registrado.
-
-A solução é inverter a responsabilidade: **a pessoa despeja o pensamento em um
-canal só e o sistema faz a triagem.** Uma camada de IA lê a mensagem, decide
-qual dos sete agentes de domínio cuida daquilo, extrai os campos
-estruturados (data, hora, valor, projeto, disciplina) e grava no lugar certo.
-São oito agentes ao todo: a Sábia, que orquestra, e os sete que executam.
-
-O que o sistema entrega:
-
-- **Captura sem fricção** — Telegram, que a pessoa já tem aberto.
-- **Classificação automática** — sete funções cognitivas, um agente cada.
-- **Pergunta em vez de presumir** — quando falta um dado essencial, o agente faz
-  uma pergunta curta e segura o registro, em vez de inventar o valor.
-- **Registro estruturado** — Notion, que a pessoa consegue abrir e editar.
-- **Agendamento automático** — o que tem data vira evento na Google Agenda.
-- **Briefing diário e fechamento de domingo** — as duas rotinas de cron que
-  fecham o ciclo, descritas mais abaixo.
-- **Painel de acompanhamento** — a própria database do Notion, com filtros por
-  agente, categoria e data.
-
-### Por que agentes especializados e não um classificador só
-
-Cada domínio tem regras próprias que não se generalizam. Tino, o esquilo 🐿️,
-tem uma regra que nenhum outro tem: **nunca inventar um valor**. Se a mensagem
-diz "gastei no posto" sem número, ele pergunta o valor antes de criar o
-registro, em vez de chutar. Tino tem outra: uma lista falada
-("preciso de arroz, feijão e sabão") vira três registros, não um.
-
-Essa política vale para os oito agentes: lacuna essencial gera uma pergunta
-curta e específica e bloqueia o registro incompleto; lacuna secundária não
-impede o registro, mas aparece claramente na resposta. Nenhum agente inventa
-dados, fica calado sobre o que faltou ou faz mais de uma ou duas perguntas por
-vez.
-
-Codificar isso num prompt único produziria um monstro impossível de manter.
-Cada agente vive em um arquivo próprio, com seu prompt e suas regras.
-
----
+- captura por Telegram com lista de usuários autorizados;
+- classificação de mensagens em linguagem natural por agentes especializados;
+- validação de campos e pergunta de confirmação quando falta dado essencial;
+- persistência estruturada em databases do Notion;
+- criação e consulta de eventos na Google Agenda;
+- fila durável com retentativa e recuperação de tarefas interrompidas;
+- briefing diário e ritual semanal com regras “se-então”;
+- processamento idempotente de nota fiscal **DEMO**, sem guardar OCR bruto ou
+  identificadores fiscais;
+- dashboard financeiro público, responsivo e somente leitura;
+- modo local demonstrável, sem credenciais e sem chamadas de rede;
+- testes automatizados e varredura de dados sensíveis.
 
 ## APIs utilizadas e justificativa
 
-O projeto integra **quatro APIs externas**, todas com autenticação.
-
-| API | Papel | Autenticação | Por que esta |
+| Serviço | Papel | Autenticação | Justificativa |
 |---|---|---|---|
-| **Telegram Bot API** | Captura de mensagens | Token de bot | É onde a pessoa já está. Um app próprio exigiria instalação e login; o Telegram custa zero fricção e tem long polling gratuito. |
-| **Notion API** | Banco de dados no-code | Token de integração (Bearer) | Requisito de banco no-code. Diferente de um Postgres, a pessoa consegue abrir, filtrar e corrigir os registros sem SQL — o que importa quando o dono do sistema não é programador. |
-| **Google Calendar API v3** | Leitura e escrita de eventos | OAuth 2.0 com refresh token | A agenda que a pessoa realmente usa. Escrever num calendário próprio seria criar mais um lugar para conferir. |
-| **OpenAI, rota Codex, via OpenClaw** | Classificação da mensagem e execução dos agentes | OAuth 2.0 por device-code, sobre a assinatura ChatGPT Plus | Faz a triagem e roda os agentes. A autenticação não usa chave: o login é feito uma vez pelo CLI e consome a cota da assinatura. |
+| **Telegram Bot API** | canal de entrada e resposta | token do bot e allowlist de usuário/chat | aproveita um aplicativo já presente no cotidiano e reduz a fricção de captura |
+| **Google Calendar API v3** | consulta e criação de eventos | OAuth 2.0 ou conta de serviço | registra o compromisso na agenda que a pessoa já acompanha |
+| **Notion API** | banco no-code e gestão visual | Bearer token com páginas compartilhadas explicitamente | permite consultar, filtrar e corrigir dados sem SQL |
+| **OpenAI/Codex via OpenClaw** | compreensão, classificação e orquestração | OAuth por device-code | mantém a rota inteligente centralizada e separada das credenciais das demais APIs |
 
-### Modos de autenticação
+As duas APIs centrais exigidas pelo trabalho são **Telegram** e **Google
+Agenda**. O **Notion** cumpre a persistência no-code e também funciona como
+superfície administrativa. A rota inteligente ativa é OpenClaw com provider
+OpenAI/Codex; o classificador heurístico local existe para demonstração e
+degradação segura quando a IA não está disponível.
 
-As quatro APIs usam mecanismos diferentes de propósito — o projeto exercita o
-espectro completo:
+## Arquitetura e fluxo
 
-- **Token no caminho da URL** (Telegram)
-- **Bearer token em header** (Notion)
-- **OAuth 2.0 com fluxo de consentimento e renovação de token** (Google)
-- **OAuth 2.0 por device-code, sem chave de API** (OpenAI, rota Codex)
-
-O Google e o OpenAI são os mais interessantes, e por motivos diferentes.
-
-No Google, o fluxo interativo roda uma única vez
-(`scripts/autorizar_google.py`), grava um refresh token, e daí em diante o
-cliente troca esse refresh por um access token de curta duração a cada sessão,
-renovando sozinho quando expira.
-
-No OpenAI, o fluxo é **device-code**: a máquina que precisa de acesso não tem
-navegador, então ela imprime uma URL e um código curto, e a autorização
-acontece em outro dispositivo já logado. A máquina fica consultando até o
-consentimento chegar. É o desenho pensado para servidor sem interface, e é o
-motivo de **não existir API key nessa rota** — a credencial é a assinatura da
-pessoa, não um segredo copiável. Detalhes em [`docs/openclaw.md`](docs/openclaw.md).
-
----
-
-## Arquitetura e fluxo de integração
-
-```
-   ┌─────────────┐
-   │  Telegram   │  captura — a pessoa escreve uma frase
-   └──────┬──────┘
-          │  Mensagem (id, texto, autor)
-          ▼
-   ┌──────────────────┐        ┌────────────────────────────┐
-   │  ORQUESTRADORA   │◄──────►│  OpenClaw                  │
-   │                  │        │  provider openai (Codex)   │
-   │  entende         │        │  main + 6 subagentes,      │
-   │  decide          │        │  um workspace cada         │
-   │  despacha        │        └────────────────────────────┘
-   │                  │        ┌──────────────────┐
-   │                  │◄──────►│  Fila durável    │
-   └────────┬─────────┘        │  (em disco)      │
-            │                  └──────────────────┘
-            │  Item classificado
-            ├──────────────────────────┐
-            ▼                          ▼
-   ┌──────────────────┐      ┌──────────────────┐
-   │      Notion      │      │  Google Agenda   │
-   │  (todos os itens)│      │  (só o que tem   │
-   │                  │      │   data + agente  │
-   │                  │      │   de agenda)     │
-   └──────────────────┘      └──────────────────┘
+```mermaid
+flowchart LR
+    P[Pessoa] --> TG[Telegram Bot API]
+    TG --> F[(Fila durável)]
+    F --> S[Sábia<br/>orquestradora]
+    S <--> IA[OpenClaw<br/>OpenAI/Codex]
+    S --> N[(Notion<br/>banco no-code)]
+    S -->|itens com agenda| G[Google Calendar API]
+    S --> TG
+    N --> D[Dashboard DEMO<br/>Vercel]
 ```
 
-Diagrama detalhado em Mermaid: [`docs/fluxo.md`](docs/fluxo.md).
-Decisões de arquitetura: [`docs/arquitetura.md`](docs/arquitetura.md).
+A captura e o processamento são independentes: a mensagem entra na fila antes
+de qualquer chamada externa. Se uma integração falhar, o sistema preserva o
+item e informa a falha em vez de perder silenciosamente o registro. O fluxo
+completo, os estados da fila e os mecanismos de autenticação estão em
+[`docs/fluxo.md`](docs/fluxo.md).
 
-### O papel da orquestradora
+### Nota fiscal DEMO
 
-A orquestradora (`src/sop/orquestradora.py`) é a peça central e faz
-deliberadamente **muito pouco**: entende, decide e despacha. Ela não grava no
-Notion, não cria evento, não formata texto. Toda lógica de domínio vive na
-definição do agente.
+O fluxo controlado de nota recebe um arquivo sintético, extrai apenas os campos
+necessários, cria um lançamento financeiro e atualiza a despensa/lista de
+compras no Notion. Um fingerprint evita duplicidade no reenvio. O modo exige
+`SABIA_DEMO=1` e fontes DEMO explícitas; CPF, CNPJ, cartão, endereço, chave
+fiscal, texto OCR bruto e o arquivo recebido não são persistidos. Veja o
+[roteiro de demonstração](docs/demo-nota-pitch.md) e a
+[evidência sanitizada](docs/evidencias/nota-demo-20260830.md).
 
-Esse desenho é o que permite **acrescentar um agente novo sem tocar no código**:
-basta criar um arquivo em `agentes/`. O registro carrega tudo o que encontrar no
-diretório e o roteamento passa a considerar as categorias novas.
+### Dashboard
 
-### A fila durável
+O dashboard público consulta somente bases DEMO do Notion por uma integração
+de leitura e mantém um snapshot fictício como fallback. A API pública aceita
+apenas `GET`, filtra registros que não estejam marcados como demonstração e não
+devolve IDs de páginas, cursores ou erros internos.
 
-Mensagem recebida é enfileirada em disco antes de ser processada. Se o processo
-morrer no meio, a tarefa continua existindo e é retomada — `recuperar_orfas()`
-devolve para a fila o que ficou travado. Cada mudança de estado é um
-`os.rename`, que é atômico: dois workers nunca processam a mesma tarefa.
+**Acesso:** <https://sabia-dashboard-demo.vercel.app>
 
-Isso separa a captura do processamento: quem escreveu recebe confirmação na
-hora, sem esperar as três APIs responderem.
+O Notion administrativo não é publicado neste README porque contém a camada de
+gestão da instalação. O bot também depende da allowlist configurada e não é
+apresentado como demonstração pública irrestrita.
 
-### Degradação em vez de falha
+## Evidências visuais
 
-O sistema foi desenhado para funcionar parcialmente configurado:
+As imagens abaixo foram produzidas no ambiente publicado e usam somente dados
+fictícios, identificados como DEMO.
 
-- **Sem chave de IA** → cai no classificador heurístico local (palavras-chave e
-  expressões regulares). Menos preciso, mas roda offline e sem custo.
-- **Sem Notion** → classifica e responde, apenas não persiste.
-- **Google Agenda fora do ar** → o item ainda é gravado no Notion e o erro
-  aparece no resultado. Perder o evento é ruim; perder o registro seria pior.
+### Dashboard em desktop
 
----
+![Dashboard financeiro DEMO em desktop](docs/evidencias/vercel-dashboard-desktop.png)
 
-## Os agentes
+### Dashboard em dispositivo móvel
 
-Cada agente é um arquivo Markdown em `agentes/`, com cabeçalho de metadados e o
-prompt no corpo. As categorias não se sobrepõem: cada uma pertence a um único
-agente, senão o roteamento seria ambíguo (há um teste que garante isso).
+![Dashboard financeiro DEMO em dispositivo móvel](docs/evidencias/vercel-dashboard-mobile.png)
 
-Os animais não representam páginas. Cada um representa uma **função cognitiva**
-da arquitetura, e é isso que faz a metáfora sustentar o sistema em vez de só
-decorá-lo.
+### Incorporação permitida no Notion
 
-| Agente | Função | Domínio | Categorias | Cria evento? |
-|---|---|---|---|---|
-| **Prumo, a raposa** 🦊 | planejar | estratégia, projetos, metas, prioridades | `tarefa`, `marco`, `metrica` | sim |
-| **Lida, a abelha** 🐝 | fazer | rotinas, hábitos, limpeza, tarefas recorrentes | `limpeza`, `rotina` | não |
-| **Tino, o esquilo** 🐿️ | guardar | finanças, compras, estoque, patrimônio | `gasto`, `receita`, `meta`, `compras`, `estoque` | não |
-| **Elo, o cervo** 🦌 | cuidar | família, filhos, casa, alimentação, bem-estar | `cardapio`, `familia` | não |
-| **Eco, o elefante** 🐘 | lembrar | memória, documentos, histórico, registros | `documento`, `registro` | não |
-| **Nova, a borboleta** 🦋 | crescer | educação, estudos, hábitos de aprendizado, cursos, leituras, desenvolvimento pessoal | `estudo`, `material`, `flashcard`, `curso`, `aprendizado` | sim |
-| **Psiu, o beija-flor** 🐦 | avisar | calendário, lembretes, avisos, mensagens | `compromisso`, `lembrete`, `mensagem` | sim |
+![Dashboard DEMO incorporado em uma origem do Notion](docs/evidencias/vercel-embed-notion.png)
 
-A **Sábia, a coruja** 🦉 é a oitava e mora em `agentes/_orquestradora.md`. O prefixo `_` a
-mantém fora do roteamento: ela compreende, consulta o contexto e decide para
-quem vai a mensagem, sem receber categoria nenhuma. O `nome:` dela continua
-`main`, que é o slot do agente principal no OpenClaw.
+> A terceira imagem valida a política de incorporação na origem do Notion; não
+> é uma captura da conta pessoal da autora.
 
-O **efeito borboleta** citado em `regras.py` e no ritual semanal é outra coisa:
-é o encadeamento se-então entre compromissos, não Nova, a borboleta 🦋.
+## Tecnologias e ferramentas
 
-### Como a Sábia fala
+- Python 3.10+, `requests`, pytest e biblioteca padrão;
+- Telegram Bot API, Notion API e Google Calendar API v3;
+- OpenClaw com provider OpenAI/Codex;
+- MCP para ferramentas de agenda e nota DEMO;
+- HTML, CSS e JavaScript sem framework no dashboard;
+- Vercel para hospedagem estática e função serverless;
+- Mermaid para diagramas e systemd/cron para rotinas operacionais.
 
-Calma, observadora, prática e elegante. Sem urgência artificial e sem linguagem
-motivacional. A regra de tom vale para todos os agentes e está escrita na alma
-de cada um:
+## Executar localmente
 
-> Em vez de "Você está atrasado em 17 tarefas", diga "Há 17 tarefas abertas.
-> Cinco merecem sua atenção esta semana."
+### Pré-requisitos
 
-```bash
-python -m sop agentes    # lista os agentes de domínio e seus domínios
-```
+- Python 3.10 ou superior;
+- Git;
+- credenciais próprias apenas para usar as integrações reais;
+- Node.js/OpenClaw somente para executar a rota inteligente completa.
 
-### Como eles rodam: OpenClaw
-
-Os agentes são declarados e executados no [OpenClaw](https://docs.openclaw.ai),
-com **um workspace por agente, tools restritas por agente e modelo por agente**.
-
-O mesmo arquivo em `agentes/` alimenta as duas pontas: o roteamento em Python e
-a alma (`SOUL.md`) que o agente lê ao subir dentro do OpenClaw. O prompt é
-escrito uma vez.
-
-```bash
-python -m sop openclaw              # gera openclaw/agentes.json e as almas
-python -m sop openclaw --verificar  # falha se alguém editou agentes/ sem regerar
-```
-
-| id | Papel | Tools |
-|---|---|---|
-| `main` | Sábia, a coruja 🦉, compreender e despachar | `fs.read`, `grep`, `agent.invoke` |
-| `esquilo` | Tino, o esquilo 🐿️, guardar | `fs.read`, `fs.write` |
-| `raposa` | Prumo, a raposa 🦊, planejar | `fs.read`, `fs.write` |
-| `elefante` | Eco, o elefante 🐘, lembrar | `fs.read`, `fs.write` |
-| `borboleta` | Nova, a borboleta 🦋, crescer | `fs.read`, `fs.write`, `web.fetch` |
-
-`beija-flor`, `abelha` e `cervo` permanecem apenas no roteamento Python, com
-`openclaw_ativo: false`; não são instalados no OpenClaw. Agenda e rotina
-doméstica ficam com a `juliana-ops` na estrutura Sábia.
-
-A regra das tools é dar o menor conjunto que resolve o trabalho. `agent.invoke`
-existe só na orquestradora, porque delegação em especialista abre caminho para
-loop infinito; `shell.exec` não existe em ninguém, porque nenhum agente deste
-sistema precisa executar comando. As duas regras têm teste.
-
-Detalhes, decisões e pontos em aberto: [`docs/openclaw.md`](docs/openclaw.md).
-
----
-
-## Autenticação e segurança
-
-### Estratégia de credenciais
-
-**Nenhuma credencial vive no código ou no repositório.** Tudo vem de variáveis
-de ambiente, carregadas de um `.env` que está no `.gitignore` desde o primeiro
-commit. O `.env.example` documenta cada variável com todos os valores vazios.
-
-O `.gitignore` bloqueia por padrão, não por exceção: `.env*`, `*.key`, `*.pem`,
-`credentials.json`, `token*.json`, `*session*.txt`, `secrets/`, `dados/`.
-
-### Controle de acesso na captura
-
-Um bot do Telegram é endereçável por qualquer pessoa que descubra seu nome.
-Por isso o cliente só converte em mensagem processável o que vier do `chat_id`
-configurado em `TELEGRAM_CHAT_ID_AUTORIZADO` — qualquer outra origem é
-descartada silenciosamente, sem resposta que confirme a existência do bot.
-
-### Cuidados no tratamento de erro
-
-O token do Telegram viaja no caminho da URL, então uma exceção de rede poderia
-vazá-lo em log. O cliente isola isso: a única função que toca o token é `_url`,
-e os erros propagam apenas a descrição devolvida pela API. Há um teste que
-verifica que o token não aparece na mensagem de erro.
-
-### Escopo mínimo no Google
-
-O fluxo OAuth pede apenas `calendar`. O arquivo de token é gravado com
-permissão `600` e fica fora do repositório.
-
-### Varredura automática
-
-```bash
-bash scripts/varredura_seguranca.sh
-```
-
-Verifica o repositório inteiro contra padrões de token, chave privada, CPF,
-CNPJ, telefone, cartão e outros dados sensíveis. Sai com código 1 se encontrar
-qualquer ocorrência. **A mesma varredura roda dentro da suíte de testes**
-(`tests/test_seguranca.py`), então um dado sensível quebra o build, não só o
-script manual.
-
----
-
-## Instalar e rodar o OpenClaw
-
-Esta seção é o passo a passo completo para quem nunca viu o projeto. Se você só
-quer ver o sistema funcionando sem instalar nada, pule para
-[Como executar](#como-executar): o projeto sobe sem o OpenClaw e sem nenhuma
-credencial.
-
-### O que é preciso
-
-- Ubuntu 22+ / Debian (root) ou macOS 13+ (usuário normal)
-- Node 22.19 ou superior — o script instala se faltar
-- Uma assinatura **ChatGPT Plus** ativa, para autorizar a rota Codex
-- Um bot do Telegram criado no `@BotFather`
-
-### Se o OpenClaw não estiver instalado
-
-É o caso normal em máquina nova. Confira e instale:
-
-```bash
-openclaw --version || bash scripts/openclaw/instalar.sh
-```
-
-O script instala Node 22 via nvm (se preciso), instala `openclaw@2026.6.5` e
-cria `~/.openclaw` com permissão `700`. No Ubuntu ele precisa de root, porque
-instala pacotes de sistema e cria os symlinks que o systemd enxerga:
-
-```bash
-sudo bash scripts/openclaw/instalar.sh
-```
-
-> A versão é fixada de propósito. O repositório de referência registra que
-> `openclaw@latest` quebra o polling do Telegram. Não troque sem testar.
-
-**Se você não quiser ou não puder instalar o OpenClaw**, nada aqui é
-bloqueante: sem ele, `IA_BACKEND` cai no classificador heurístico local e o
-sistema continua classificando, gravando no Notion e criando evento na agenda.
-O que muda é a precisão da triagem. `python -m sop diagnostico` mostra qual
-backend está respondendo.
-
-### 1. Autenticar o provedor de IA
-
-```bash
-bash scripts/openclaw/configurar_provedor_openai.sh
-```
-
-O script imprime uma URL (`https://auth.openai.com/codex/device`) e um código
-curto. Abra a URL no navegador de um computador **já logado no ChatGPT Plus**,
-digite o código e autorize. O terminal detecta sozinho e imprime
-`OpenAI device code complete`. Você não cola nada de volta.
-
-> **Não procure por uma API key do Codex.** Ela não existe. A rota Codex
-> autentica só por OAuth, contra a sua assinatura. A variável `OPENAI_API_KEY`
-> do `.env.example` serve a outra coisa: a rota alternativa por API, opcional.
-
-Ao final, o script define `gateway.mode local` (sem isso o gateway nem sobe) e
-`openai/gpt-5.5` como modelo primário.
-
-### 2. Configurar o canal do Telegram
-
-```bash
-TG_BOT_TOKEN="cole-o-token-do-botfather" \
-TG_USER_ID="seu-id-numerico" \
-  bash scripts/openclaw/configurar_telegram.sh
-```
-
-Para descobrir o seu id: mande qualquer mensagem para o bot e abra
-`https://api.telegram.org/bot<SEU_TOKEN>/getUpdates`; o número está em
-`message.from.id`.
-
-O script usa `openclaw config patch`, que valida na escrita, e configura
-`dmPolicy: allowlist` com o seu id — só você fala com o bot. O arquivo
-temporário que carrega o token é apagado logo depois.
-
-### 3. Gerar e registrar os agentes
-
-```bash
-python -m sop openclaw                      # gera a declaração e as almas
-bash scripts/openclaw/registrar_agentes.sh  # registra no OpenClaw
-```
-
-O segundo script lê `openclaw/agentes.json` e, para cada agente, chama
-`openclaw agents add` (append não destrutivo e idempotente — pode rodar de
-novo), define nome e emoji com `agents set-identity` e copia a alma para o
-`SOUL.md` do workspace dele.
-
-### 4. Subir o gateway como serviço
-
-```bash
-sudo cp systemd/openclaw-gateway.service /etc/systemd/system/
-sudo sed -i "s|__OPENCLAW_BIN__|$(command -v openclaw)|" \
-    /etc/systemd/system/openclaw-gateway.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now openclaw-gateway
-systemctl status openclaw-gateway
-```
-
-O caminho do binário é substituído porque o Node instalado via nvm não está no
-`PATH` do systemd.
-
-### 5. Conferir
-
-```bash
-openclaw config validate     # deve dizer "Config valid"
-openclaw agents list         # main + os 5 subagentes
-openclaw models status --probe
-openclaw doctor
-python -m sop diagnostico    # mostra qual backend de IA está ativo
-```
-
-E, no Telegram, mande `/start` para o seu bot.
-
-### Ligar a camada de IA ao OpenClaw
-
-O backend `openclaw` precisa de `OPENCLAW_COMANDO` no `.env`: a linha de comando
-que invoca o agente principal de forma não interativa. O CLI da 2026.6.5 não lê
-stdin e embrulha a resposta num envelope JSON, então o projeto traz a costura
-pronta em `scripts/openclaw/classificar.sh`:
-
-```bash
-OPENCLAW_COMANDO=bash scripts/openclaw/classificar.sh {agente}
-```
-
-Enquanto a variável estiver vazia, o sistema usa o heurístico e avisa em
-`python -m sop diagnostico`. Os pontos que continuam em aberto estão em
-[`docs/openclaw.md`](docs/openclaw.md#pontos-a-confirmar).
-
----
-
-## Como executar
-
-### Requisitos
-
-Python 3.10 ou superior. O OpenClaw é opcional para rodar e obrigatório só para
-usar o provedor de IA de verdade — ver a seção acima.
-
-### 1. Instalar
+### Instalação
 
 ```bash
 git clone https://github.com/brunarezerdev/sabia-organizacao-pessoal.git
 cd sabia-organizacao-pessoal
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
 
-### 2. Rodar sem configurar nada
-
-O projeto sobe sem credencial. Comece por aqui:
+### Demonstração offline
 
 ```bash
-python -m sop diagnostico    # mostra o que está configurado e o que falta
-python -m sop demo           # classifica 12 mensagens de exemplo, sem rede
+python3 -m sop diagnostico
+python3 -m sop demo
+python3 -m sop simular
 ```
 
-O `demo` usa o classificador heurístico local — nenhuma API é chamada e nada é
-gravado. Serve para ver o roteamento funcionando antes de configurar qualquer
-coisa.
+Esses comandos usam dados fictícios e o classificador heurístico local. Não
+chamam APIs nem gravam dados reais.
 
-### 3. Configurar as credenciais
+### Configuração das integrações
 
 ```bash
 cp .env.example .env
 ```
 
-Preencha o `.env` seguindo os passos abaixo.
+Preencha apenas o necessário. O [`.env.example`](.env.example) documenta todas
+as opções sem valores secretos. As principais variáveis são:
 
-<details>
-<summary><b>Telegram</b> — TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID_AUTORIZADO</summary>
-
-1. No Telegram, converse com **@BotFather** e mande `/newbot`.
-2. Escolha nome e username. O BotFather devolve o token — cole em
-   `TELEGRAM_BOT_TOKEN`.
-3. Mande qualquer mensagem para o seu bot.
-4. Abra `https://api.telegram.org/bot<SEU_TOKEN>/getUpdates` no navegador e
-   copie o `message.chat.id` para `TELEGRAM_CHAT_ID_AUTORIZADO`.
-</details>
-
-<details>
-<summary><b>Notion</b> — NOTION_TOKEN, NOTION_DATABASE_ID</summary>
-
-1. Acesse <https://www.notion.so/my-integrations> e crie uma integração
-   interna. Copie o token para `NOTION_TOKEN`.
-2. No Notion, crie uma database com estas propriedades (nome e tipo exatos):
-
-   | Propriedade | Tipo |
-   |---|---|
-   | `Titulo` | Title |
-   | `Agente` | Select |
-   | `Categoria` | Select |
-   | `Data` | Date |
-   | `Observacao` | Text |
-   | `Detalhes` | Text |
-
-3. Na database, menu `...` → **Conexões** → adicione a sua integração.
-   **Sem esse passo a API devolve 404 mesmo com token válido.**
-4. Copie o ID da database da URL (os 32 caracteres antes do `?`) para
-   `NOTION_DATABASE_ID`.
-</details>
-
-<details>
-<summary><b>Google Agenda</b> — GOOGLE_CREDENTIALS_PATH, GOOGLE_TOKEN_PATH</summary>
-
-1. No <https://console.cloud.google.com>, crie um projeto e habilite a
-   **Google Calendar API**.
-2. Em Credenciais, crie um **ID do cliente OAuth 2.0** do tipo "Aplicativo para
-   computador". Baixe o JSON.
-3. Aponte `GOOGLE_CREDENTIALS_PATH` para o JSON baixado e `GOOGLE_TOKEN_PATH`
-   para onde o token será salvo (fora do repositório).
-4. Rode o fluxo de consentimento uma única vez:
-
-   ```bash
-   pip install google-auth-oauthlib
-   python scripts/autorizar_google.py
-   ```
-</details>
-
-<details>
-<summary><b>Rotas de IA alternativas</b> — OPENAI_API_KEY / ANTHROPIC_API_KEY (opcionais)</summary>
-
-**A rota em produção não usa nenhuma das duas.** Ela é o OpenClaw com o provider
-`openai` (Codex), que autentica por OAuth device-code sobre a assinatura — ver
-[Instalar e rodar o OpenClaw](#instalar-e-rodar-o-openclaw). Estas chaves só
-entram em cena para quem preferir chamar a API direto, sem instalar o OpenClaw.
-
-- **OpenAI:** crie uma chave em <https://platform.openai.com/api-keys>, cole em
-  `OPENAI_API_KEY` e instale o SDK: `pip install openai`. Não é a rota Codex — o
-  Codex autentica por OAuth e não aceita chave de API.
-- **Anthropic:** crie uma chave em <https://console.anthropic.com/>, cole em
-  `ANTHROPIC_API_KEY` e instale o SDK: `pip install anthropic`.
-
-A ordem de escolha é `openclaw → openai → anthropic → heuristica`, e
-`IA_BACKEND` força um backend específico. Sem nenhum deles o sistema usa o
-classificador heurístico local e continua funcionando.
-</details>
-
-### 4. Verificar
-
-```bash
-python scripts/verificar_config.py
-```
-
-Diferente do `diagnostico`, este script bate nas APIs de verdade e confirma que
-as credenciais funcionam.
-
-### 5. Rodar
-
-```bash
-python -m sop escutar --processar   # tudo em um processo só
-```
-
-Ou separando captura de processamento (recomendado em produção):
-
-```bash
-python -m sop escutar    # terminal 1: captura e enfileira
-python -m sop worker     # terminal 2: consome a fila
-```
-
-### Todos os comandos
-
-| Comando | O que faz |
+| Integração | Variáveis |
 |---|---|
-| `python -m sop diagnostico` | Mostra o que está configurado |
-| `python -m sop agentes` | Lista os agentes carregados |
-| `python -m sop demo` | Roda os exemplos fictícios, sem rede |
-| `python -m sop classificar "texto"` | Classifica sem gravar nada |
-| `python -m sop processar "texto"` | Fluxo completo (grava de verdade) |
-| `python -m sop escutar` | Long polling do Telegram |
-| `python -m sop worker` | Consome a fila durável |
-| `python -m sop regras` | Lista as regras se-então carregadas |
-| `python -m sop ritual` | Monta o pacote do ritual de domingo |
-| `python -m sop simular` | Ritual de ponta a ponta com dados fictícios, sem rede |
+| Telegram | `TELEGRAM_BOT_TOKEN` ou `TELEGRAM_BOT_TOKEN_PATH`, `TELEGRAM_CHAT_ID_AUTORIZADO` |
+| Notion | `NOTION_TOKEN` ou `NOTION_TOKEN_PATH`, `NOTION_DATABASE_ID` e IDs das bases usadas |
+| Google Agenda | `GOOGLE_CALENDAR_ID` e `GOOGLE_TOKEN_PATH` ou `GOOGLE_SERVICE_ACCOUNT_PATH` |
+| OpenClaw/Codex | `IA_BACKEND`, `OPENCLAW_BASE`, `OPENCLAW_AGENTE`, `OPENCLAW_MODELO`, `OPENCLAW_COMANDO` |
+| Geral | `TIMEZONE`, `FILA_DIR` |
+| Ambiente DEMO | `SABIA_DEMO` e IDs das fontes DEMO correspondentes |
 
----
+Nunca versione o `.env`, tokens OAuth, chaves, arquivos de sessão ou backups.
+Para o preparo das bases e autorizações, consulte
+[`docs/openclaw.md`](docs/openclaw.md),
+[`docs/google-agenda.md`](docs/google-agenda.md) e
+[`docs/deploy-vercel-demo.md`](docs/deploy-vercel-demo.md).
 
-## Automação de ponta a ponta
-
-A automação demonstrável do projeto, em `src/sop/automacao.py`:
-
-**Mensagem no Telegram → item classificado no Notion → evento na Google Agenda**
-
-Passo a passo do que acontece quando alguém escreve
-*"Reunião com o cliente na quinta às 14h"*:
-
-1. **Captura** — o cliente do Telegram recebe o update, confere que o `chat_id`
-   é o autorizado e converte em `Mensagem`.
-2. **Enfileiramento** — a mensagem entra na fila durável em disco. A pessoa
-   recebe confirmação sem esperar o resto.
-3. **Classificação** — a camada de IA lê o texto e devolve, validado por JSON
-   Schema: agente `beija-flor`, categoria `compromisso`, título
-   "Reunião com o cliente", data `2026-09-03`, hora `14:00`.
-4. **Validação de roteamento** — a orquestradora confirma que o agente existe e
-   que a categoria pertence a ele. Se o modelo alucinar um agente inexistente,
-   o roteamento é resgatado pela categoria.
-5. **Registro** — o item é gravado no Notion com todas as propriedades.
-6. **Agendamento** — como tem data e Psiu, o beija-flor, trabalha com agenda, um
-   evento de 60 minutos é criado na Google Agenda.
-7. **Confirmação** — o sistema responde no Telegram dizendo o que entendeu,
-   onde guardou e se algo precisa de confirmação.
-
-Ver funcionando sem configurar nada:
+### Execução integrada
 
 ```bash
-python -m sop demo
+python3 scripts/verificar_config.py
+python3 -m sop escutar --processar
 ```
 
----
-
-## O ciclo diário: briefing da manhã
-
-Todo dia de manhã a Sábia monta um briefing e entrega no Telegram. A instrução
-que ela segue é um arquivo versionado, `sabia/briefing-diario.md`, e o cron
-dispara por `scripts/openclaw/rotina_sabia.sh`.
-
-O briefing tem cinco blocos, nesta ordem:
-
-1. **Previsão do tempo** da cidade, consultada no `wttr.in`.
-2. **Agenda do dia**, lida da Google Agenda.
-3. **Cardápio do dia**, lido da base `Planejamento de Refeições` no Notion.
-4. **Pendências abertas**, lidas da base `Prazos e tarefas` no Notion.
-5. **Combinação das três prioridades do dia.**
-
-O quinto bloco é o que dá o desenho do sistema. Ele **propõe** até três
-candidatas (itens não feitos com prazo hoje ou amanhã) e termina pedindo
-confirmação. A Sábia não escolhe a prioridade no lugar da pessoa: enquanto não
-houver resposta explícita, nada é gravado. Quando a combinação fecha, o único
-lugar onde ela mora é a propriedade de data `Prioridade do dia`, na mesma base
-`Prazos e tarefas` — sem base paralela, sem duplicata e nunca mais de três.
-
-É a mesma política de "perguntar em vez de presumir" que vale na classificação,
-aplicada à decisão do dia.
-
-A rotina roda um turno do agente principal na sessão direta da pessoa, e não
-numa conversa nova. É isso que faz a resposta "pode ser essas duas, mas troca a
-terceira" continuar a mesma conversa do briefing.
+Em produção, captura e processamento podem ser separados:
 
 ```bash
-SOP_BRIEFING_CHAT_ID=<chat> bash scripts/openclaw/rotina_sabia.sh
+python3 -m sop escutar  # terminal 1
+python3 -m sop worker   # terminal 2
 ```
 
-Os testes de `tests/test_briefing.py` são **estáticos de propósito**: eles
-verificam o contrato da instrução (a ordem dos blocos, a fonte única das
-prioridades, a proibição de gravar sem confirmação) sem mandar Telegram nem
-tocar nas bases reais. O comportamento do modelo em si não é testado
-automaticamente.
+## Testes e evidências
 
----
-
-## O ciclo semanal: regras se-então e ritual de domingo
-
-A automação da mensagem resolve o minuto. O ciclo semanal resolve a semana.
-
-São duas peças, em `src/sop/regras.py` e `src/sop/ritual.py`:
-
-**Agenda da semana + base de Regras → tarefas derivadas → ritual de domingo**
-
-### O motor de regras
-
-Todo compromisso gera efeito. Uma consulta médica não é só uma consulta: ela
-exige que o dinheiro esteja separado antes. Se o dinheiro não estiver separado,
-alguém precisa sacar, e isso vira outro compromisso. Uma coisa puxa a outra.
-
-O motor lê os eventos da semana, cruza com uma base de regras editável e gera as
-tarefas que nascem desse cruzamento. Uma regra tem esta forma:
-
-| Campo | Para que serve |
-|---|---|
-| `Se` | O gatilho, escrito em uma frase |
-| `Então` | A ação gerada, escrita em uma frase |
-| `Área` | Casa, Escola, Saúde, Estudos, Projetos ou Finanças |
-| `Origem` | `Agenda` cruza com os eventos, `Estoque` com a lista de essenciais |
-| `Palavras-chave` | Termos separados por vírgula que reconhecem o gatilho |
-| `Antecedência em dias` | Quantos dias antes a tarefa vence |
-| `Ativa` | Desliga a regra sem apagá-la |
-| `Observação` | Contexto para quem for executar |
-
-Duas decisões que valem explicação:
-
-- **Cada frase do `Então` vira uma tarefa.** Frases que começam com "Se" são
-  efeitos de segunda ordem: dependem de uma checagem humana antes de existirem.
-  É assim que a falta do dinheiro consegue gerar a tarefa de pedir para sacar,
-  sem que o sistema precise adivinhar se o dinheiro está lá.
-- **Os termos de `Palavras-chave` são alternativas, e um termo com mais de uma
-  palavra é procurado como frase.** Isso permite escrever `escola da nina` sem
-  que todo evento com a palavra `nina` dispare a regra. Na dúvida o motor gera a
-  tarefa a mais, que se desmarca em um clique: esquecer o material da escola
-  custa mais caro do que uma linha sobrando na lista.
-
-A base de regras mora no Notion e é editada por quem usa, sem tocar em código.
-Acrescentar uma regra nova não exige nenhum deploy. Sem a base configurada, o
-motor cai em `exemplos/regras.json` e continua demonstrável.
+Execução fresca em **1º de setembro de 2026**:
 
 ```bash
-python -m sop regras
+python3 -m pytest
+# 301 passed
+
+bash scripts/varredura_seguranca.sh
+# varredura concluída sem ocorrências
 ```
 
-### O ritual de domingo
+Os 301 testes são locais: clientes HTTP e integrações externas são substituídos
+por dublês, sem rede ou credenciais reais. A suíte cobre, entre outros pontos:
 
-Vinte minutos, uma vez por semana, em duas metades:
+- classificação, datas relativas e validação de lacunas;
+- clientes Telegram, Notion e Google Agenda;
+- OAuth, allowlist e não vazamento de token em erros;
+- persistência, retentativa e recuperação da fila;
+- automações diária e semanal;
+- OpenClaw, MCP de agenda e nota DEMO;
+- API e responsividade funcional do dashboard;
+- padrões de segredos e dados pessoais no conteúdo versionado.
 
-1. **Fechar a semana que terminou.** O sistema lista os compromissos que
-   estiveram na agenda e devolve em checkbox. Ele não afirma o que foi feito,
-   porque não tem como saber: quem marca é a pessoa. O que sobra é dividido
-   entre o que volta para a semana seguinte e o que morre ali.
-2. **Abrir a semana que começa.** Os compromissos da semana, os efeitos que eles
-   geram pelo motor de regras, os essenciais que estão acabando, o checklist do
-   que precisa estar pronto e as três prioridades.
+Evidências de execuções reais e controladas ficam em
+[`docs/evidencias/`](docs/evidencias/). Elas registram o que foi provado sem
+publicar credenciais ou conteúdo pessoal.
 
-O pacote sai pronto nos dois formatos: texto para o Telegram e blocos para o
-Notion, com `to_do` de verdade, não parágrafo.
+## Segurança, LGPD e governança
 
-```bash
-python -m sop ritual                        # imprime o pacote
-python -m sop ritual --domingo 2026-03-08   # em outra data
-python -m sop ritual --publicar --telegram  # cria o registro datado e envia
+- credenciais entram por ambiente ou por arquivos externos com permissão
+  restrita; nenhuma credencial deve ser versionada;
+- Telegram aceita somente IDs autorizados e descarta silenciosamente origens
+  desconhecidas;
+- Google usa escopo de calendário e tokens renováveis; Notion enxerga somente
+  páginas compartilhadas com a integração;
+- o dashboard é somente leitura, filtra dados DEMO e aplica CSP, HSTS,
+  `nosniff`, política de referência e restrições de permissões;
+- erros públicos são genéricos e não revelam tokens, IDs internos ou respostas
+  cruas de provedores;
+- a nota DEMO aplica minimização, finalidade, idempotência e descarte de dados
+  desnecessários;
+- a pessoa continua podendo revisar e corrigir os registros no Notion;
+- a varredura automatizada bloqueia padrões de token, chave privada e dados
+  pessoais antes da entrega.
+
+Mais detalhes no [modelo de segurança](docs/seguranca.md).
+
+## Estrutura do repositório
+
+```text
+.
+├── agentes/             definições dos agentes de domínio
+├── api/                 endpoint serverless do dashboard
+├── dashboard/           interface web e snapshot DEMO
+├── docs/                arquitetura, fluxo, segurança e evidências
+├── exemplos/            mensagens, regras e semana fictícias
+├── openclaw/            configuração gerada dos agentes
+├── sabia/               runtime e fila da instalação Sábia
+├── scripts/             configuração, automações, deploy e scans
+├── src/sop/             aplicação Python e integrações
+├── systemd/             unidades de serviço
+└── tests/               suíte automatizada
 ```
 
-`--publicar` cria um registro próprio em `NOTION_RITUAIS_DATABASE_ID`, identificado
-pela propriedade `Domingo`. A execução é idempotente: se aquela data já existe,
-nada é duplicado. Os domingos anteriores recebem `Status = Fechado` e continuam
-no mesmo banco; nada é apagado. Se `NOTION_TAREFAS_DATABASE_ID` estiver definido,
-o registro relaciona as tarefas marcadas como feitas cujo prazo cai na semana,
-sem copiar os dados da base `Prazos e tarefas`.
+## Limitações conhecidas
 
-Nesta instalação, `scripts/ritual_domingo.sh` é a entrada segura para o cron:
-usa a configuração do projeto, publica pela API gratuita e não envia Telegram.
-Como a VPS roda em UTC, domingo às 19h de Brasília é:
+- a execução completa requer contas e credenciais próprias para Telegram,
+  Notion, Google e OpenClaw/Codex;
+- o bot não é aberto ao público: a allowlist é uma decisão de segurança;
+- o dashboard público expõe apenas dados DEMO e é uma interface de consulta,
+  não de edição;
+- o snapshot local pode ser exibido se a leitura DEMO do Notion estiver
+  temporariamente indisponível;
+- parte dos agentes especializados roda pelo runtime Python, e somente os
+  agentes marcados como ativos possuem workspace no OpenClaw;
+- o parsing de PDF escaneado depende de conversão/OCR disponível no ambiente;
+- não há link de vídeo pitch ou slides versionado neste repositório.
 
-```cron
-0 22 * * 0 /bin/bash /caminho/do/projeto/scripts/ritual_domingo.sh >> /caminho/dos/logs/ritual-domingo.log 2>&1
-```
+## Próximos passos
 
-### Ver funcionando sem configurar nada
+- habilitar deploy automático do dashboard a partir da branch principal;
+- ampliar os testes de execução do briefing com um ambiente controlado;
+- adicionar conversão local de páginas de PDF escaneado antes do OCR;
+- criar observabilidade agregada sem registrar o conteúdo das mensagens;
+- publicar o vídeo pitch e acrescentar aqui somente um link revisado e
+  acessível.
 
-```bash
-python -m sop simular
-```
+## Documentação relacionada
 
-Roda o ciclo inteiro com a semana fictícia de `exemplos/semana.json`, incluindo
-uma consulta médica que gera as duas tarefas do efeito borboleta. Nenhuma API é
-chamada.
-
----
-
-## Testes
-
-```bash
-python -m pytest
-```
-
-**260 testes, nenhum toca em rede ou usa credencial real.** As APIs externas são
-substituídas por sessões HTTP falsas e o cliente de IA por um duplo que
-registra os parâmetros recebidos.
-
-| Arquivo | Cobre |
-|---|---|
-| `test_agentes.py` | Carga das definições, categorias sem sobreposição, personas |
-| `test_config.py` | Subir sem credencial, diagnóstico, mensagens de erro |
-| `test_fila.py` | FIFO, retentativa, persistência entre processos, órfãs |
-| `test_classificacao.py` | Datas relativas, extração de valor, roteamento, structured output |
-| `test_automacao.py` | Fluxo ponta a ponta, falha parcial, fila |
-| `test_integracoes.py` | Os três clientes de API, autorização, renovação de token |
-| `test_seguranca.py` | Varredura de dados sensíveis no repositório |
-| `test_regras.py` | Motor se-então: casamento de gatilho, efeito de segunda ordem, prazos |
-| `test_ritual.py` | Limites das semanas, leitura da agenda, saída para Telegram e Notion |
-| `test_briefing.py` | Contrato do briefing diário: ordem dos blocos, fonte única das prioridades, proibição de gravar sem confirmação |
-| `test_openclaw.py` | Declaração dos agentes, geração das almas, backend que fala com o CLI |
-| `test_gcal_mcp.py` | Servidor MCP da agenda: resolução de rótulo e tradução de falha |
-
-Alguns testes que valem menção:
-
-- `test_gasto_sem_valor_pede_confirmacao` — garante a regra de nunca inventar
-  um número e fazer uma pergunta objetiva.
-- `test_lacuna_essencial_pergunta_e_nao_grava` — impede que um item essencialmente
-  incompleto seja salvo antes da resposta.
-- `test_lacuna_secundaria_grava_e_avisa` — permite o registro útil, sem esconder
-  o detalhe secundário que não foi informado.
-- `test_falha_na_agenda_nao_perde_o_registro` — a agenda cai e o item ainda é
-  gravado.
-- `test_token_nao_vaza_no_erro` — o token do Telegram não aparece na exceção.
-- `test_estado_persiste_entre_instancias` — a fila sobrevive ao processo.
-- `test_recusa_do_modelo_cai_na_heuristica` — `stop_reason: refusal` não vira
-  crash nem resposta vazia.
-- `test_consulta_na_agenda_gera_as_duas_tarefas_do_efeito_borboleta` — o efeito
-  de segunda ordem nasce junto com o direto.
-- `test_fechamento_nao_inventa_o_que_foi_feito` — o sistema pergunta em vez de
-  afirmar o que não tem como saber.
-- `test_coluna_faltando_no_notion_nao_derruba_a_leitura` — a base de regras é
-  editada à mão, e uma coluna renomeada não pode quebrar o domingo de ninguém.
-
----
-
-## Prints
-
-> Espaço reservado para as capturas de tela da entrega. Salve as imagens em
-> `docs/prints/` e substitua cada bloco abaixo.
-
-### 1. Bot no Telegram recebendo e confirmando
-
-<!-- ![Conversa no Telegram](docs/prints/01-telegram.png) -->
-
-_Print da conversa: a mensagem enviada e a confirmação do sistema._
-
-### 2. Database do Notion com os itens classificados
-
-<!-- ![Database do Notion](docs/prints/02-notion.png) -->
-
-_Print da database com registros de agentes diferentes, mostrando as colunas
-Agente, Categoria e Data._
-
-### 3. Evento criado automaticamente na Google Agenda
-
-<!-- ![Google Agenda](docs/prints/03-agenda.png) -->
-
-_Print do evento na agenda, criado a partir da mensagem do Telegram._
-
-### 4. Diagnóstico de configuração
-
-<!-- ![Diagnóstico](docs/prints/04-diagnostico.png) -->
-
-_Print do `python -m sop diagnostico` com as quatro integrações prontas._
-
-### 5. Suíte de testes passando
-
-<!-- ![Testes](docs/prints/05-testes.png) -->
-
-_Print do `python -m pytest` com os 260 testes verdes._
-
-### 6. Painel de acompanhamento
-
-<!-- ![Painel](docs/prints/06-painel.png) -->
-
-_Print de uma view do Notion agrupada por agente, servindo como painel de
-acompanhamento da rotina._
-
----
-
-## Estrutura do projeto
-
-```
-sop-pessoal/
-├── agentes/                   definições dos agentes (um .md por agente)
-├── docs/
-│   ├── arquitetura.md         decisões de arquitetura
-│   ├── fluxo.md               diagramas Mermaid
-│   ├── seguranca.md           modelo de ameaças e controles
-│   ├── openclaw.md            instalação, decisões e pontos em aberto
-│   ├── google-agenda.md       OAuth, escopos e o servidor MCP
-│   ├── estrutura-sabia.md     como a Sábia roda nesta instalação
-│   ├── evidencias/            prova da cadeia rodando com as APIs reais
-│   └── prints/                capturas de tela da entrega
-├── exemplos/
-│   ├── mensagens.json         12 mensagens fictícias para demonstração
-│   ├── regras.json            regras se-então de exemplo
-│   └── semana.json            semana fictícia para o `sop simular`
-├── openclaw/                  declaração gerada e as almas (SOUL.md) por agente
-├── sabia/
-│   ├── briefing-diario.md     instrução do briefing da manhã
-│   ├── almas/                 prompts dos agentes desta instalação
-│   ├── bin/                   leitor da fila do gateway
-│   └── fila/                  entrada, saída e processadas (conteúdo não versionado)
-├── scripts/
-│   ├── autorizar_google.py    fluxo OAuth, roda uma vez
-│   ├── preparar_notion.py     cria as bases no-code do Notion
-│   ├── preparar_rituais_notion.py  cria a base dos registros de domingo
-│   ├── backup_notion.py       exporta as bases do Notion
-│   ├── provar_cadeia.py       prova ponta a ponta com as APIs reais
-│   ├── ritual_domingo.sh      entrada de cron do fechamento semanal
-│   ├── openclaw/rotina_sabia.sh  entrada de cron do briefing diário
-│   ├── verificar_config.py    testa as credenciais contra as APIs
-│   └── varredura_seguranca.sh varredura de dados sensíveis
-├── src/sop/
-│   ├── orquestradora.py       entende, decide, despacha
-│   ├── automacao.py           fluxo de ponta a ponta
-│   ├── regras.py              motor de regras se-então
-│   ├── ritual.py              fechamento e abertura da semana
-│   ├── fila.py                fila durável em disco
-│   ├── openclaw.py            declaração dos agentes e backend do CLI
-│   ├── agentes/               carga das definições
-│   ├── integracoes/           telegram, notion, google_calendar, gcal_mcp, ia
-│   ├── config.py              configuração e diagnóstico
-│   ├── modelos.py             estruturas de dados
-│   ├── datas.py               datas relativas em português
-│   └── cli.py                 interface de linha de comando
-├── systemd/                   unidade do gateway
-└── tests/                     260 testes, sem rede
-```
-
----
-
-## O que ainda é parcial
-
-Para não vender como pronto o que não está:
-
-- **Prints da entrega.** `docs/prints/` ainda só tem o `LEIA-ME.md`; as seis
-  capturas continuam como espaço reservado. A prova de que a cadeia roda com as
-  APIs reais está em [`docs/evidencias/`](docs/evidencias/), em texto.
-- **Cinco dos oito agentes rodam no OpenClaw.** `main`, `esquilo`, `raposa`,
-  `elefante` e `borboleta` estão instalados. `beija-flor`, `abelha` e `cervo`
-  existem no roteamento Python, com `openclaw_ativo: false`, e ainda não têm
-  workspace próprio.
-- **`OPENCLAW_COMANDO` não foi verificado.** Enquanto a variável estiver vazia,
-  a classificação cai no heurístico local. Detalhe em
-  [Ponto a confirmar antes de usar em produção](#ponto-a-confirmar-antes-de-usar-em-produção).
-- **O briefing diário é testado por contrato, não por execução.** Os testes
-  garantem a instrução; o comportamento do modelo em produção é conferido a olho.
-- **O repositório é privado.** Ele carrega o primeiro nome de quem usa o sistema
-  em documentação e nas almas dos agentes. Não há credencial, e-mail, telefone
-  nem identificador de chat versionado — a varredura de `scripts/varredura_seguranca.sh`
-  roda limpa —, mas tornar público é uma decisão que ainda não foi tomada.
-
----
+- [Fluxo de integração e diagramas](docs/fluxo.md)
+- [Decisões de arquitetura](docs/arquitetura.md)
+- [OpenClaw e rota OpenAI/Codex](docs/openclaw.md)
+- [Google Agenda](docs/google-agenda.md)
+- [Segurança](docs/seguranca.md)
+- [Deploy do dashboard DEMO](docs/deploy-vercel-demo.md)
+- [Demonstração da nota](docs/demo-nota-pitch.md)
+- [Evidências técnicas](docs/evidencias/)
 
 ## Licença
 
