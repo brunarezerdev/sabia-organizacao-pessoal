@@ -14,7 +14,8 @@ financeiras de demonstração em uma interface responsiva.
 
 [Abrir o dashboard DEMO](https://sabia-dashboard-demo.vercel.app) ·
 [Ver o fluxo detalhado](docs/fluxo.md) ·
-[Ver a documentação de arquitetura](docs/arquitetura.md)
+[Ver a documentação de arquitetura](docs/arquitetura.md) ·
+[Repositório no GitHub](https://github.com/brunarezerdev/sabia-organizacao-pessoal)
 
 ## Problema e solução
 
