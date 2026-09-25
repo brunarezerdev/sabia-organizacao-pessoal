@@ -1,0 +1,18 @@
+# Saída real do OCR local sobre a foto de um cupom NFC-e térmico desbotado,
+# com as linhas já recompostas por posição vertical. Formato: confiança|texto.
+# CNPJ, protocolo e chave de acesso foram mascarados: o que o teste precisa é
+# da estrutura e da qualidade do reconhecimento, não dos dados do documento.
+0.80|NFC-e RRIO BRANCB,A25,SAU PELEURINO COMPENHIA MERCADO CONERCIO E INDUSTRIA
+0.80|CAXIAS DQ SUL.RS F0ne:(00)0000-0000
+0.94|Doc. Auxiliar da Mota Fiscal de Consunidor Eletronica
+0.87|betaine da Venda
+0.55|ILEM_CODIGO QTO UN VUHIT(RS) DESCRIVAO DL.TOIAL(RS)
+0.76|001-000000109770606U8A102054 1.000UIRX22.49 22.49
+0.76|002-0000001038809 S1# #E D 200G .000UNX16.98 16.98
+0.74|OO.TOTALOFITEN 2
+0.87|UALOR TOTAL RS 39.47
+0.78|FINMA DE PAUAMENIO URLOR PAGO
+0.86|Cartao Credito 39.47
+0.88|Consuite peia Chave de fcesso ea:
+0.76|CONSUNIDUR.CURSUMIDOR IAO TOENTIFICADO
+0.92|Data de Aut0r1zacao:04/04/2026 22:07:38

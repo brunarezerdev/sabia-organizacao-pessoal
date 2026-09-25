@@ -14,6 +14,12 @@ dependencies = ["requests>=2.31"]
 ia = ["openai>=1.40", "anthropic>=0.40"]
 google = ["google-auth-oauthlib>=1.2", "google-auth>=2.30"]
 mcp = ["mcp>=2.0"]
+nota = [
+    "rapidocr-onnxruntime>=1.4",
+    "opencv-python-headless>=4.9",
+    "pypdf>=4.0",
+    "PyMuPDF>=1.24",
+]
 dev = ["pytest>=8.0"]
 
 [project.scripts]

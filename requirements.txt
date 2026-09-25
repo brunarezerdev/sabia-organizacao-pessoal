@@ -19,5 +19,14 @@ google-auth>=2.30
 # (scripts/openclaw/gcal_mcp.sh). Quem só usa a CLI do sop não precisa.
 mcp>=2.0
 
+# Leitura de nota de mercado (foto e PDF). São bibliotecas Python de propósito:
+# a VPS não tem root, então depender de pacote de sistema (tesseract, poppler)
+# deixava o fluxo de foto morto sem ninguém perceber. Com o tesseract ou o
+# pdftotext instalados, eles continuam sendo usados como caminho alternativo.
+rapidocr-onnxruntime>=1.4      # OCR local, modelos embutidos, sem serviço pago
+opencv-python-headless>=4.9    # pré-processamento da foto antes do OCR
+pypdf>=4.0                     # texto de PDF sem poppler
+PyMuPDF>=1.24                  # rasteriza PDF sem camada de texto para OCR
+
 # Desenvolvimento.
 pytest>=8.0

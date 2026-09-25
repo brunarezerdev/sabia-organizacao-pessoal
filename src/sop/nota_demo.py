@@ -12,11 +12,11 @@ from decimal import Decimal
 import hashlib
 import json
 import re
-import subprocess
-import tempfile
 import unicodedata
 from pathlib import Path
 from typing import Any, Protocol
+
+from . import nfce, ocr
 
 
 UNIDADES = {"UN": "un", "UND": "un", "KG": "kg", "G": "g", "L": "l", "ML": "ml"}
@@ -98,29 +98,135 @@ def parsear_texto(texto: str) -> Nota:
     return Nota(data_nota, tuple(itens))
 
 
-def extrair_texto(arquivo: Path) -> tuple[str, str]:
-    """PDF textual primeiro, OCR local gratuito como fallback.
+def extrair_linhas(arquivo: Path) -> tuple[list[ocr.Linha], str]:
+    """Linhas do documento e o motor que as leu, com a confiança de cada uma.
 
-    QR/NFC-e é tratado como pista, não como dado persistente. Quando zbarimg
-    existe, a URL detectada pode ser consumida por um adaptador de SEFAZ; sem
-    ele, seguimos para OCR sem serviço pago e sem guardar a URL/chave.
+    A leitura em si mora em `sop.ocr`, que escolhe entre texto, PDF e OCR de
+    imagem conforme o que existe instalado na máquina. Aqui só traduzimos a
+    falha técnica para uma frase que a pessoa consegue agir em cima.
     """
-    sufixo = arquivo.suffix.lower()
-    if sufixo == ".txt":
-        return arquivo.read_text(encoding="utf-8"), "texto"
-    if sufixo == ".pdf":
-        r = subprocess.run(["pdftotext", str(arquivo), "-"], capture_output=True, text=True, timeout=30)
-        if r.returncode == 0 and r.stdout.strip():
-            return r.stdout, "pdf-texto"
-        raise NotaAmbigua("PDF sem camada de texto; converta a página em imagem para OCR")
-    with tempfile.TemporaryDirectory(prefix="sabia-nota-") as tmp:
-        saida = Path(tmp) / "ocr"
-        r = subprocess.run(["tesseract", str(arquivo), str(saida), "-l", "por"], capture_output=True, text=True, timeout=60)
-        if r.returncode != 0:
-            r = subprocess.run(["tesseract", str(arquivo), str(saida)], capture_output=True, text=True, timeout=60)
-        if r.returncode != 0:
-            raise NotaAmbigua("OCR local falhou; envie outra foto")
-        return saida.with_suffix(".txt").read_text(encoding="utf-8"), "ocr-tesseract"
+    try:
+        return ocr.ler(arquivo)
+    except ocr.ErroDeLeitura as erro:
+        raise NotaAmbigua(str(erro)) from erro
+
+
+def extrair_texto(arquivo: Path) -> tuple[str, str]:
+    """Versão em texto corrido da leitura, mantida para quem só quer o conteúdo."""
+    linhas, motor = extrair_linhas(arquivo)
+    return "\n".join(l.texto for l in linhas), motor
+
+
+class NomesIlegiveis(NotaAmbigua):
+    """A nota fecha nos números, mas o nome de um ou mais produtos não foi lido.
+
+    Carrega a leitura inteira para que quem chamou possa perguntar à pessoa os
+    nomes que faltam em vez de descartar uma nota que está correta no resto.
+    """
+
+    def __init__(self, mensagem: str, leitura: nfce.LeituraNFCe) -> None:
+        super().__init__(mensagem)
+        self.leitura = leitura
+
+
+def _parece_formato_demo(linhas: list[ocr.Linha]) -> bool:
+    return any(ITEM.match(l.texto.strip()) for l in linhas)
+
+
+def _conferir_tamanho(rotulo: str, valores: list[str] | None, esperado: int) -> None:
+    if valores is not None and len(valores) != esperado:
+        raise NotaAmbigua(
+            f"a nota tem {esperado} itens e vieram {len(valores)} {rotulo}; "
+            f"confirme {rotulo} para cada item, na ordem da nota"
+        )
+
+
+def _nota_de_leitura(
+    leitura: nfce.LeituraNFCe,
+    nomes: list[str] | None = None,
+    unidades: list[str] | None = None,
+) -> Nota:
+    """Converte a leitura da NFC-e na `Nota` que o restante do fluxo consome."""
+    if leitura.data is None:
+        raise NotaAmbigua("não achei a data na nota; confirme a data da compra")
+    if not leitura.fecha:
+        # Nota que não fecha é leitura incompleta, e leitura incompleta não vira
+        # lançamento: metade de uma compra no financeiro é pior que nenhuma.
+        raise NotaAmbigua(f"a leitura não fechou: {leitura.porque_nao_fecha()}")
+
+    _conferir_tamanho("nomes", nomes, len(leitura.itens))
+    _conferir_tamanho("unidades", unidades, len(leitura.itens))
+
+    escolhidos: list[tuple[str, str | None]] = []
+    faltando: list[tuple[int, tuple[str, ...]]] = []
+    for posicao, item in enumerate(leitura.itens):
+        nome = (nomes[posicao].strip() if nomes else "") or (
+            item.descricao if item.nome_confiavel else ""
+        )
+        bruta = (unidades[posicao].strip() if unidades else "")
+        unidade = nfce.UNIDADES.get(bruta.upper(), bruta.lower() or None) if bruta else item.unidade
+        escolhidos.append((nome, unidade))
+
+        pendencias = [p for p in item.falta() if p != "quantidade"]
+        if nome:
+            pendencias = [p for p in pendencias if p != "nome"]
+        if unidade:
+            pendencias = [p for p in pendencias if p != "unidade"]
+        if item.quantidade <= 0:
+            pendencias.append("quantidade")
+        if pendencias:
+            faltando.append((posicao, tuple(pendencias)))
+
+    if faltando:
+        pendentes = "; ".join(
+            f"item {p + 1} de R$ {leitura.itens[p].total} (falta {', '.join(o)})"
+            for p, o in faltando
+        )
+        raise NomesIlegiveis(
+            f"os números da nota fecham em R$ {leitura.total_declarado}, mas não "
+            f"consegui ler tudo de {len(faltando)} produto(s): {pendentes}. "
+            "Confirme o que falta ou reenvie a nota em PDF ou com foto mais nítida.",
+            leitura,
+        )
+
+    itens: list[ItemNota] = []
+    for (nome_bruto, unidade), item in zip(escolhidos, leitura.itens):
+        nome, chave = normalizar_nome(nome_bruto)
+        if unidade is None:
+            raise NotaAmbigua(f"unidade não reconhecida em {nome}")
+        if item.quantidade <= 0 or item.total < 0:
+            raise NotaAmbigua(f"quantidade/valor inválido em {nome}")
+        itens.append(ItemNota(nome, chave, item.quantidade, unidade, item.total))
+
+    chaves = [(i.chave, i.unidade) for i in itens]
+    if len(chaves) != len(set(chaves)):
+        raise NotaAmbigua("a nota contém linhas repetidas; confirme antes de consolidar")
+    return Nota(leitura.data, tuple(itens))
+
+
+def ler_nota(
+    arquivo: Path,
+    nomes: list[str] | None = None,
+    unidades: list[str] | None = None,
+) -> tuple[Nota, str]:
+    """Lê o arquivo e devolve a nota mais o método usado.
+
+    Dois formatos são aceitos, nesta ordem: o formato estruturado da
+    demonstração, e a NFC-e como ela sai impressa no cupom. A ordem importa
+    porque o formato da demonstração é explícito e não precisa de nenhuma
+    inferência.
+    """
+    linhas, motor = extrair_linhas(arquivo)
+    if _parece_formato_demo(linhas):
+        return parsear_texto("\n".join(l.texto for l in linhas)), motor
+    try:
+        leitura = nfce.parsear(linhas)
+    except nfce.NaoEhNFCe as erro:
+        raise NotaAmbigua(
+            "não reconheci isso como nota de mercado; confira se a foto pegou o "
+            "bloco de itens inteiro, ou envie o PDF da nota"
+        ) from erro
+    return _nota_de_leitura(leitura, nomes, unidades), motor
 
 
 class BancoDemo(Protocol):

@@ -1,0 +1,13 @@
+# Mesma NFC-e vinda de PDF com camada de texto (ou de foto nítida): o
+# reconhecimento sai limpo e os nomes dos produtos são confiáveis.
+1.00|DANFE NFC-e - Documento Auxiliar da Nota Fiscal de Consumidor Eletronica
+1.00|MERCADO EXEMPLO LTDA
+1.00|Detalhe da Venda
+1.00|ITEM CODIGO DESCRICAO QTD UN VL UNIT(R$) VL. TOTAL(R$)
+1.00|001 0000001097750 ASPARGO BRANCO MERCATTO 205G 1,000 UN X 22,49 22,49
+1.00|002 0000001038809 MOSTARDA HEMMER DIJON 200G 1,000 UN X 16,98 16,98
+1.00|QTD. TOTAL DE ITENS 2
+1.00|VALOR TOTAL R$ 39,47
+1.00|FORMA DE PAGAMENTO VALOR PAGO
+1.00|Cartao Credito 39,47
+1.00|Data de Autorizacao: 04/04/2026 22:07:38
