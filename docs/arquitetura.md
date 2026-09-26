@@ -288,6 +288,24 @@ para a pessoa, porque o sistema não tem como saber o que foi cumprido.
 
 ---
 
+## Decisão 11 — prioridade é explicável e corrigível
+
+**Decisão:** toda tarefa nova recebe um quadrante da Matriz de Eisenhower no momento do registro,
+e a confirmação informa a classificação. O modelo avalia urgência e importância separadamente a
+partir do texto original. Se um eixo não estiver claro, assume o lado conservador e declara a
+suposição, para que a pessoa possa corrigi-la por mensagem.
+
+**Por quê:** uma prioridade silenciosa parece um fato, mesmo quando foi inferida. Explicar a
+incerteza preserva a automação sem esconder a decisão. A correção altera a mesma página do Notion,
+em vez de criar uma duplicata.
+
+**Datas:** `Registrada em` usa o tipo imutável `created_time` do Notion, inclusive para registros
+anteriores. `Concluída em` só é preenchida quando a pessoa declara a conclusão; reabrir limpa a
+data. Não usamos prazo, última edição ou outro indício como substituto, pois isso inventaria um
+dado histórico.
+
+---
+
 ## O que ficou de fora, e por quê
 
 | Não implementado | Motivo |
@@ -295,7 +313,7 @@ para a pessoa, porque o sistema não tem como saber o que foi cumprido.
 | Webhook do Telegram | Long polling não exige HTTPS público nem domínio. Trocar depois é mudar um método. |
 | Múltiplos usuários | O sistema é de uso pessoal. Multiusuário exigiria isolar credenciais por pessoa — outro projeto. |
 | Front-end próprio | A database do Notion já é o painel. Construir um seria duplicar o que existe. |
-| Edição por conversa | Corrigir um item se faz no Notion, que já é bom nisso. |
+| Edição genérica por conversa | Continua no Notion; o quadrante de Eisenhower e a conclusão de tarefas são as duas correções conversacionais suportadas. |
 | Cache de classificação | Volume de uma pessoa não justifica. |
 
 ---

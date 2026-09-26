@@ -46,6 +46,8 @@ oferecer uma interface de consulta.
 - persistência estruturada em databases do Notion;
 - criação e consulta de eventos na Google Agenda;
 - fila durável com retentativa e recuperação de tarefas interrompidas;
+- priorização automática de tarefas pela Matriz de Eisenhower, com correção por conversa e
+  datas de registro e conclusão no Notion;
 - briefing diário e ritual semanal com regras “se-então”;
 - processamento idempotente de nota fiscal **DEMO**, sem guardar OCR bruto ou
   identificadores fiscais;
@@ -209,19 +211,31 @@ python3 -m sop escutar  # terminal 1
 python3 -m sop worker   # terminal 2
 ```
 
+### Priorizar e corrigir tarefas
+
+No Telegram da Sábia, uma mensagem como “registrar a tarefa de revisar a apresentação até
+terça” cria a tarefa em `Prazos e tarefas` já classificada em um dos quatro quadrantes da Matriz
+de Eisenhower. A confirmação informa o quadrante; quando o texto não basta para decidir um dos
+eixos, a Sábia adota a opção conservadora e explica a suposição.
+
+A correção também é conversacional: “muda a tarefa de revisar a apresentação para importante e
+não urgente”. Ao receber “concluí a tarefa de revisar a apresentação”, a mesma linha é marcada
+como feita e recebe a data real de conclusão. A data de registro é automática e imutável no
+Notion. As tarefas pessoais permanecem fora do dashboard público, que continua somente DEMO.
+
 ## Testes e evidências
 
-Execução fresca em **1º de setembro de 2026**:
+Execução fresca em **26 de setembro de 2026**:
 
 ```bash
 python3 -m pytest
-# 301 passed
+# 328 passed
 
 bash scripts/varredura_seguranca.sh
 # varredura concluída sem ocorrências
 ```
 
-Os 301 testes são locais: clientes HTTP e integrações externas são substituídos
+Os 328 testes são locais: clientes HTTP e integrações externas são substituídos
 por dublês, sem rede ou credenciais reais. A suíte cobre, entre outros pontos:
 
 - classificação, datas relativas e validação de lacunas;
