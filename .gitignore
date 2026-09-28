@@ -34,6 +34,15 @@ backup/
 backups/
 
 # ---------------------------------------------------------------------------
+# Painel de produtividade gerado
+# ---------------------------------------------------------------------------
+# O HTML é montado a partir da base de tarefas e da agenda reais. Ele não
+# contém texto pessoal por construção, mas contém a rotina de uma pessoa em
+# números: fica fora do versionamento. O que entra no repositório são os prints
+# revisados em docs/evidencias/ e o modo `--exemplo`, que é fictício.
+painel/
+
+# ---------------------------------------------------------------------------
 # Fila local e artefatos de execução
 # ---------------------------------------------------------------------------
 .fila/

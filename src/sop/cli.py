@@ -13,6 +13,7 @@ Comandos:
     python -m sop regras               # lista as regras se-então carregadas
     python -m sop ritual               # monta o pacote do ritual de domingo
     python -m sop simular              # ritual de ponta a ponta, sem rede
+    python -m sop painel               # gera o painel de produtividade em HTML
 """
 
 from __future__ import annotations
@@ -391,6 +392,110 @@ def cmd_simular(config: Config, args: argparse.Namespace) -> int:
     return 0
 
 
+# -- painel de produtividade -------------------------------------------------
+
+
+def _painel_de_exemplo(hoje: date):
+    """Painel montado com a semana fictícia de `exemplos/painel.json`.
+
+    Existe para que qualquer pessoa consiga ver o painel funcionando sem token
+    do Notion, sem chave da Google e sem os dados pessoais de ninguém.
+    """
+    from .painel_produtividade import Compromisso, Tarefa, montar
+
+    dados = _exemplos("painel.json")
+    tarefas = [
+        Tarefa(
+            registrada_em=date.fromisoformat(t["registrada_em"]),
+            quadrante=t.get("quadrante"),
+            onde=t.get("onde"),
+            feita=bool(t.get("feita")),
+            concluida_em=(
+                date.fromisoformat(t["concluida_em"])
+                if t.get("concluida_em")
+                else None
+            ),
+        )
+        for t in dados["tarefas"]
+    ]
+    compromissos = [
+        Compromisso(
+            dia=date.fromisoformat(c["dia"]),
+            faixa=c.get("faixa", "Outros"),
+            horas=float(c.get("horas", 0.0)),
+            hora_inicio=c.get("hora_inicio"),
+            recorrente=bool(c.get("recorrente")),
+            dia_inteiro=bool(c.get("dia_inteiro")),
+        )
+        for c in dados["compromissos"]
+    ]
+    return montar(tarefas, compromissos, hoje, origem="exemplo fictício")
+
+
+def _painel_real(config: Config, hoje: date):
+    """Painel montado com a base de tarefas e a agenda de verdade."""
+    from .integracoes.notion import ClienteNotion
+    from .painel_produtividade import (
+        coletar_compromissos,
+        coletar_tarefas,
+        montar,
+    )
+
+    tarefas = []
+    if config.pronta("notion") and config.notion_tarefas_database_id:
+        tarefas = coletar_tarefas(
+            ClienteNotion(config), config.notion_tarefas_database_id
+        )
+    else:
+        print(
+            "Aviso: sem NOTION_TAREFAS_DATABASE_ID o painel sai só com a agenda.",
+            file=sys.stderr,
+        )
+
+    compromissos = []
+    if config.pronta("google_calendar"):
+        from .integracoes.google_calendar import ClienteGoogleCalendar
+
+        compromissos = coletar_compromissos(ClienteGoogleCalendar(config), hoje)
+    else:
+        print(
+            "Aviso: Google Agenda não configurada, o painel sai sem compromissos.",
+            file=sys.stderr,
+        )
+
+    if not tarefas and not compromissos:
+        raise RuntimeError(
+            "Nenhuma fonte de dados disponível. Configure o Notion e a Google "
+            "Agenda, ou rode `python -m sop painel --exemplo`."
+        )
+    return montar(tarefas, compromissos, hoje, origem="dados reais")
+
+
+def cmd_painel(config: Config, args: argparse.Namespace) -> int:
+    """Gera o painel de produtividade em um HTML autocontido."""
+    from .painel_html import renderizar
+
+    hoje = date.fromisoformat(args.hoje) if args.hoje else date.today()
+    painel = (
+        _painel_de_exemplo(hoje) if args.exemplo else _painel_real(config, hoje)
+    )
+
+    destino = Path(args.saida) if args.saida else RAIZ / "painel" / "painel.html"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_text(renderizar(painel), encoding="utf-8")
+
+    print(f"Painel gerado em {destino}")
+    print(f"  fonte:        {painel.origem}")
+    print(f"  tarefas:      {painel.conclusao.get('registradas', 0)} registradas, "
+          f"{painel.conclusao.get('concluidas', 0)} concluídas")
+    print(f"  compromissos: {painel.compromissos_passados} passados, "
+          f"{painel.compromissos_futuros} à frente")
+    print(f"  carga:        {painel.horas_semana}h por semana em agenda")
+    if not painel.giro.tem_valor:
+        print(f"  não medido:   {painel.giro.indisponivel}")
+    return 0
+
+
 def cmd_lista_compras(config: Config, args: argparse.Namespace) -> int:
     """Atualiza a view de compras usando as receitas planejadas na semana."""
     from dataclasses import asdict
@@ -460,6 +565,15 @@ def construir_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("simular", help="ritual de ponta a ponta com dados fictícios")
     p.add_argument("--domingo", help="data do ritual (AAAA-MM-DD)")
 
+    p = sub.add_parser("painel", help="gera o painel de produtividade em HTML")
+    p.add_argument(
+        "--exemplo",
+        action="store_true",
+        help="usa a semana fictícia de exemplos/painel.json, sem rede nem credencial",
+    )
+    p.add_argument("--saida", help="caminho do HTML gerado (padrão: painel/painel.html)")
+    p.add_argument("--hoje", help="data de referência (AAAA-MM-DD), para reproduzir um painel")
+
     p = sub.add_parser("lista-compras", help="sincroniza compras com o cardápio semanal")
     p.add_argument("--data", help="data dentro da semana desejada (AAAA-MM-DD)")
 
@@ -482,6 +596,7 @@ def main(argv: list[str] | None = None) -> int:
         "regras": cmd_regras,
         "ritual": cmd_ritual,
         "simular": cmd_simular,
+        "painel": cmd_painel,
         "lista-compras": cmd_lista_compras,
     }
     try:

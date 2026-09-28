@@ -1,0 +1,1282 @@
+{
+ "_sobre": "Semana fictícia para demonstrar o painel sem credencial e sem dado pessoal. Nenhuma linha aqui descreve pessoa real.",
+ "hoje_de_referencia": "2026-09-28",
+ "tarefas": [
+  {
+   "registrada_em": "2026-09-08",
+   "quadrante": "Nem urgente nem importante",
+   "onde": "Faculdade",
+   "feita": true,
+   "concluida_em": "2026-09-08"
+  },
+  {
+   "registrada_em": "2026-08-25",
+   "quadrante": "Urgente e importante",
+   "onde": "Casa",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-09-26",
+   "quadrante": "Urgente e importante",
+   "onde": "Faculdade",
+   "feita": true,
+   "concluida_em": "2026-09-28"
+  },
+  {
+   "registrada_em": "2026-08-24",
+   "quadrante": "Importante e não urgente",
+   "onde": "Faculdade",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-09-14",
+   "quadrante": "Importante e não urgente",
+   "onde": "Faculdade",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-08-23",
+   "quadrante": "Importante e não urgente",
+   "onde": "Faculdade",
+   "feita": true,
+   "concluida_em": "2026-08-25"
+  },
+  {
+   "registrada_em": "2026-08-24",
+   "quadrante": "Urgente e não importante",
+   "onde": "Faculdade",
+   "feita": true,
+   "concluida_em": "2026-08-25"
+  },
+  {
+   "registrada_em": "2026-08-23",
+   "quadrante": "Importante e não urgente",
+   "onde": "Casa",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-09-22",
+   "quadrante": "Importante e não urgente",
+   "onde": "Trabalho",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-09-22",
+   "quadrante": "Importante e não urgente",
+   "onde": "Casa",
+   "feita": true,
+   "concluida_em": "2026-09-22"
+  },
+  {
+   "registrada_em": "2026-08-28",
+   "quadrante": "Importante e não urgente",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-08-31"
+  },
+  {
+   "registrada_em": "2026-08-22",
+   "quadrante": "Nem urgente nem importante",
+   "onde": "Casa",
+   "feita": true,
+   "concluida_em": "2026-08-24"
+  },
+  {
+   "registrada_em": "2026-08-15",
+   "quadrante": "Urgente e não importante",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-08-17"
+  },
+  {
+   "registrada_em": "2026-09-07",
+   "quadrante": "Urgente e não importante",
+   "onde": "Faculdade",
+   "feita": true,
+   "concluida_em": "2026-09-08"
+  },
+  {
+   "registrada_em": "2026-08-27",
+   "quadrante": "Importante e não urgente",
+   "onde": "Casa",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-08-28",
+   "quadrante": "Importante e não urgente",
+   "onde": "Faculdade",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-08-24",
+   "quadrante": "Importante e não urgente",
+   "onde": "Trabalho",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-09-07",
+   "quadrante": "Importante e não urgente",
+   "onde": "Pessoal",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-09-24",
+   "quadrante": "Urgente e não importante",
+   "onde": "Pessoal",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-08-15",
+   "quadrante": "Importante e não urgente",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-08-17"
+  },
+  {
+   "registrada_em": "2026-09-10",
+   "quadrante": "Importante e não urgente",
+   "onde": "Trabalho",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-09-27",
+   "quadrante": "Nem urgente nem importante",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-09-28"
+  },
+  {
+   "registrada_em": "2026-09-25",
+   "quadrante": "Urgente e importante",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-09-27"
+  },
+  {
+   "registrada_em": "2026-09-03",
+   "quadrante": "Nem urgente nem importante",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-09-04"
+  },
+  {
+   "registrada_em": "2026-09-03",
+   "quadrante": "Importante e não urgente",
+   "onde": "Pessoal",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-08-24",
+   "quadrante": "Importante e não urgente",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-08-27"
+  },
+  {
+   "registrada_em": "2026-09-14",
+   "quadrante": "Urgente e importante",
+   "onde": "Casa",
+   "feita": true,
+   "concluida_em": "2026-09-16"
+  },
+  {
+   "registrada_em": "2026-09-28",
+   "quadrante": "Importante e não urgente",
+   "onde": "Trabalho",
+   "feita": false,
+   "concluida_em": null
+  },
+  {
+   "registrada_em": "2026-09-10",
+   "quadrante": "Urgente e importante",
+   "onde": "Trabalho",
+   "feita": true,
+   "concluida_em": "2026-09-13"
+  },
+  {
+   "registrada_em": "2026-09-20",
+   "quadrante": "Importante e não urgente",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-09-20"
+  },
+  {
+   "registrada_em": "2026-08-16",
+   "quadrante": "Urgente e não importante",
+   "onde": "Pessoal",
+   "feita": true,
+   "concluida_em": "2026-08-20"
+  },
+  {
+   "registrada_em": "2026-09-22",
+   "quadrante": "Importante e não urgente",
+   "onde": "Faculdade",
+   "feita": true,
+   "concluida_em": "2026-09-24"
+  },
+  {
+   "registrada_em": "2026-09-15",
+   "quadrante": "Importante e não urgente",
+   "onde": "Faculdade",
+   "feita": true,
+   "concluida_em": "2026-09-15"
+  },
+  {
+   "registrada_em": "2026-09-28",
+   "quadrante": "Importante e não urgente",
+   "onde": "Faculdade",
+   "feita": true,
+   "concluida_em": "2026-09-28"
+  }
+ ],
+ "compromissos": [
+  {
+   "dia": "2025-09-28",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 9,
+   "recorrente": false
+  },
+  {
+   "dia": "2025-10-15",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 15,
+   "recorrente": false
+  },
+  {
+   "dia": "2025-11-27",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 16,
+   "recorrente": false
+  },
+  {
+   "dia": "2025-12-16",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 15,
+   "recorrente": false
+  },
+  {
+   "dia": "2025-12-26",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 16,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-01-20",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 14,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-01-28",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 16,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-03-01",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 9,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-04-25",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 8,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-04-29",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 8,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-05-10",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 9,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-05-20",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 8,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-06-10",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 9,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-06-11",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 16,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-07-03",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 14,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-08-08",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 16,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-08-14",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 9,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-08-19",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 8,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-08-23",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 8,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-08-28",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 16,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-09-10",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 16,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-09-18",
+   "faixa": "Outros",
+   "horas": 1.0,
+   "hora_inicio": 8,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-09-28",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-09-28",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-09-28",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-09-29",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-09-29",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-09-30",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-09-30",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-01",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-01",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-02",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-05",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-05",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-05",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-06",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-06",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-07",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-07",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-08",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-08",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-09",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-12",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-12",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-12",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-13",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-13",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-14",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-14",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-15",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-15",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-16",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-19",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-19",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-19",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-20",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-20",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-21",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-21",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-22",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-22",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-23",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-26",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-26",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-26",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-27",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-27",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-28",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-28",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-29",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-29",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-30",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-02",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-02",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-02",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-03",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-03",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-04",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-04",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-05",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-05",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-06",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-09",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-09",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-09",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-10",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-10",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-11",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-11",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-12",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-12",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-13",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-16",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-16",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-16",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-17",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-17",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-18",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-18",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-19",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-19",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-20",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-23",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-23",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-23",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-24",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-24",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-25",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-25",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-26",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-26",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-27",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-30",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-30",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-11-30",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-01",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-01",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-02",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-02",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-03",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-03",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-04",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-07",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-07",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-07",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-08",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-08",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-09",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-09",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-10",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-10",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-11",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-14",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-14",
+   "faixa": "Estudo",
+   "horas": 1.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-14",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 20,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-15",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-15",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-16",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-16",
+   "faixa": "Estudo",
+   "horas": 3.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-17",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-17",
+   "faixa": "Estudo",
+   "horas": 2.0,
+   "hora_inicio": 19,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-12-18",
+   "faixa": "Trabalho",
+   "horas": 3.0,
+   "hora_inicio": 9,
+   "recorrente": true
+  },
+  {
+   "dia": "2026-10-25",
+   "faixa": "Outros",
+   "horas": 1.5,
+   "hora_inicio": 14,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-10-10",
+   "faixa": "Outros",
+   "horas": 1.5,
+   "hora_inicio": 14,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-10-02",
+   "faixa": "Outros",
+   "horas": 1.5,
+   "hora_inicio": 14,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-11-27",
+   "faixa": "Outros",
+   "horas": 1.5,
+   "hora_inicio": 8,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-12-03",
+   "faixa": "Outros",
+   "horas": 1.5,
+   "hora_inicio": 14,
+   "recorrente": false
+  },
+  {
+   "dia": "2026-11-03",
+   "faixa": "Outros",
+   "horas": 1.5,
+   "hora_inicio": 14,
+   "recorrente": false
+  }
+ ]
+}
