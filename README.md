@@ -1,129 +1,285 @@
 # Meu Sistema Operacional Pessoal
 
-**A rotina de quem estuda tecnologia com três filhos em casa, e o sistema que
-faz ela caber.**
 Trabalho de Produtividade e Gestão do Tempo · **Bruna Rezer**
 
-O projeto deste trabalho não é um software. É a **rotina real de uma pessoa**, e
-o conjunto de métodos e ferramentas que ela usa para fazer essa rotina funcionar.
-A **Sábia**, assistente que responde pelo Telegram, é a peça central desse
-conjunto, mas é peça: existe para servir a uma semana que já era difícil antes
-dela.
+Eu tenho quatro frentes rodando ao mesmo tempo: três filhos pequenos, a casa, a
+graduação em IA e Automação Digital e a operação da Música e-Gig, onde sou COO.
+O meu desafio é ter tempo hábil para dar conta de todas as obrigações sem
+atrasos. Este repositório é o sistema que eu montei para isso.
 
-[Ver o painel de produtividade](#o-painel-de-produtividade) ·
-[Ver o fluxo detalhado](docs/fluxo.md) ·
-[Ver a documentação de arquitetura](docs/arquitetura.md) ·
-[Repositório no GitHub](https://github.com/brunarezerdev/sabia-organizacao-pessoal)
+O sistema tem três camadas: a **Sábia**, assistente que eu uso pelo Telegram, o
+**Notion**, onde tudo fica organizado, e a **Google Agenda**, onde o tempo é
+reservado. Em cima disso roda um **painel de produtividade** que me diz se
+aquilo está funcionando.
+
+[Repositório no GitHub](https://github.com/brunarezerdev/sabia-organizacao-pessoal) ·
+[Fluxo detalhado](docs/fluxo.md) ·
+[Arquitetura](docs/arquitetura.md)
 
 ---
 
-## 1. O diagnóstico: que rotina é essa
+## Onde está cada requisito do enunciado
 
-Sou COO de uma operação de serviços musicais, estou no segundo semestre de uma
-graduação em IA e Automação Digital, e tenho três filhos pequenos. A renda da
-casa vem do trabalho do meu marido, que é violinista e maestro: ensaio,
-concerto e casamento acontecem à noite e no fim de semana, muitas vezes em
-outra cidade. A casa, na maior parte das noites, é comigo.
-
-O que a agenda mostra sobre essa semana, medido e não estimado:
-
-| O que é | Quanto |
+| Requisito | Onde está neste README |
 |---|---|
-| Janela protegida para estudar | **10 horas por semana**, sempre entre 19h e 22h |
-| Horas já comprometidas em agenda | **24,8 horas por semana** |
-| Onde essas horas caem | 14,8h de manhã, 10h à noite, **0h à tarde** |
-| Quem fica com as crianças nessas janelas | minha mãe de segunda a quarta; meu marido na quinta |
+| Organização de tarefas e prioridades | [5. Tarefas e prioridades](#5-tarefas-e-prioridades) |
+| Planejamento semanal ou mensal | [6. Planejamento semanal e mensal](#6-planejamento-semanal-e-mensal) |
+| Gestão de compromissos | [7. Gestão de compromissos](#7-gestão-de-compromissos) |
+| Pelo menos uma técnica de produtividade | [8. A técnica aplicada: Matriz de Eisenhower](#8-a-técnica-aplicada-matriz-de-eisenhower) |
+| Pelo menos uma ferramenta digital | [3. Ferramentas utilizadas](#3-ferramentas-utilizadas) (Notion) |
+| IA para automatizar, resumir, organizar ou planejar | [9. Como a IA entra](#9-como-a-ia-entra) |
+| Dashboard ou painel de acompanhamento | [10. O painel de produtividade](#10-o-painel-de-produtividade) |
+| README: descrição do sistema | [1. O sistema](#1-o-sistema) |
+| README: ferramentas utilizadas | [3. Ferramentas utilizadas](#3-ferramentas-utilizadas) |
+| README: fluxo de organização | [4. O fluxo de organização](#4-o-fluxo-de-organização) |
+| README: prints | [7](#7-gestão-de-compromissos), [10](#10-o-painel-de-produtividade) e [11](#11-o-painel-financeiro-demo) |
+| README: como utilizar a solução | [12. Como utilizar a solução](#12-como-utilizar-a-solução) |
 
-**O gargalo não é falta de método nem falta de braço.** É que cada janela de
-estudo tem hora para acabar, e que a rede que sustenta essas janelas é
-combinada, não contratada: filho doente ou imprevisto da minha mãe derruba a
-noite inteira. Some a isso o trabalho invisível de lembrar o que falta comprar,
-o que a escola cobrou e quem precisa de consulta, que é o que mais cansa e é
-justamente o que nenhuma lista de afazeres registra.
+---
 
-Por isso o sistema não aplica Pomodoro, Eisenhower ou GTD em estado puro.
-Cada método aqui foi adaptado no ponto exato em que a premissa dele falha para
-essa rotina, e é essa adaptação, não a adoção do método, que é o mérito do
-trabalho. O raciocínio completo, com as fontes e com o que não tem sustentação
-científica, está na fundamentação que acompanha a parte teórica.
+## 1. O sistema
 
-## 2. Como eu uso, num dia comum
+A ideia é simples: eu tenho um lugar só para falar, e o resto se organiza
+sozinho atrás disso.
 
-1. **A demanda chega no pior momento possível.** No meio do jantar, no
-   corredor da escola, com criança no colo. Eu abro o Telegram e escrevo uma
-   frase para a Sábia: *"lembrar de pagar o boleto da escola até sexta"*.
-2. **A Sábia entende e arquiva.** Ela classifica a frase, decide em qual
-   quadrante da Matriz de Eisenhower aquilo cai, grava a linha na base de
-   tarefas do Notion com a data de registro, e devolve uma confirmação curta
-   dizendo em que quadrante ficou.
-3. **Se tem data, vira compromisso.** Quando a frase traz dia e hora, o mesmo
-   fluxo cria o evento na Google Agenda, conferindo antes se o horário já está
-   ocupado. Nada é sobreposto por conta própria.
-4. **De manhã, o briefing.** Um resumo do dia com o que está aberto e o que
-   vence, para eu não precisar abrir quatro aplicativos antes das 7h.
-5. **No domingo, o ritual.** O sistema fecha a semana que terminou e abre a que
-   começa: o que foi concluído, o que vence, e as tarefas derivadas pelas regras
-   se-então que eu mesma cadastrei no Notion.
-6. **Quando eu concluo, eu aviso.** *"concluí a tarefa do boleto"* marca a
-   linha como feita e grava a data real de conclusão.
-7. **O painel me mostra a verdade.** Gerado por um comando, ele responde onde
-   as minhas horas caíram, o que foi priorizado e quanto do que entra realmente
-   sai.
+Eu mando uma frase para a Sábia pelo Telegram, por texto ou por áudio. Ela
+entende o que é aquilo, classifica a prioridade, grava na base certa do Notion
+e, se tiver data e hora, cria o compromisso na Google Agenda. Depois eu abro o
+painel e vejo onde as minhas horas foram parar.
 
-### A correção também é conversa
+Escolhi esse desenho porque eu sou interrompida o tempo todo. Qualquer sistema
+que exija abrir um aplicativo, achar a tela certa e preencher formulário não
+cabe no tempo que eu tenho quando a demanda aparece. Mandar uma mensagem cabe.
+
+## 2. A rotina que o sistema precisa atender
+
+Minha semana tem horários fixos, e eles estão todos bloqueados na agenda:
+
+| Quando | O quê | Horas por semana |
+|---|---|---|
+| Segunda a sexta, 9h às 12h | e-Gig, bloco de trabalho | 15h |
+| Segunda, 19h às 20h | Estudo | 1h |
+| Segunda, 20h às 22h | Comunidade Avalanche | 2h |
+| Terça, 19h às 21h | Aula ao vivo da UniFECAF | 2h |
+| Quarta, 19h às 22h | Estudo | 3h |
+| Quinta, 19h às 21h | Aula ao vivo da UniFECAF | 2h |
+
+São 25 horas reservadas por semana: 15 de manhã e 10 à noite. A tarde fica
+livre de propósito, porque é o turno em que as crianças estão em casa.
+
+Os horários de bloqueio de estudo e de trabalho são sagrados. Nessas horas é
+como se eu não estivesse em casa, eu fico inacessível. Isso só funciona porque
+quem fica com as crianças já está combinado antes: minha mãe de segunda a
+quarta, o Wagner na quinta.
+
+Os blocos são eventos recorrentes até 19/12/2026, então eu não preciso lembrar
+de recriar nada toda semana. Setembro inteiro também está preenchido com os
+mesmos blocos, para o painel ter base de comparação.
+
+## 3. Ferramentas utilizadas
+
+| Ferramenta | Para que serve aqui | Por que essa |
+|---|---|---|
+| **Telegram** | onde eu falo com o sistema | já está aberto no meu celular na hora em que a demanda aparece |
+| **Notion** | onde tarefas, projetos, entregas e refeições moram | eu consigo abrir, filtrar e corrigir sem depender do sistema e sem escrever SQL |
+| **Google Agenda** | onde os compromissos e as janelas protegidas ficam | é a agenda que eu já uso e que dá para compartilhar com a família |
+| **OpenAI/Codex via OpenClaw** | a compreensão da frase e a classificação de prioridade | mantém a rota de IA separada das credenciais das outras integrações |
+| **Python e pytest** | a cola entre tudo e a garantia de que não quebrou | |
+| **Vercel** | hospedagem do painel financeiro DEMO | |
+
+Autenticação de cada integração:
+
+| Serviço | Autenticação | Uso |
+|---|---|---|
+| Telegram Bot API | token do bot e allowlist de usuário e chat | entrada e resposta |
+| Google Calendar API v3 | OAuth 2.0 ou conta de serviço | consulta e criação de eventos |
+| Notion API | Bearer token, páginas compartilhadas explicitamente | banco no-code |
+| OpenAI/Codex via OpenClaw | OAuth por device-code | classificação e orquestração |
+
+O projeto não guarda chave de provedor de IA.
+
+## 4. O fluxo de organização
+
+```mermaid
+flowchart LR
+    B[Bruna no Telegram] --> TG[Telegram Bot API]
+    TG --> F[(Fila durável)]
+    F --> S[Sábia]
+    S <--> IA[OpenClaw<br/>OpenAI/Codex]
+    S --> N[(Notion<br/>tarefas, projetos, entregas)]
+    S -->|itens com data| G[Google Calendar API]
+    S --> TG
+    N --> P[Painel de<br/>produtividade]
+    G --> P
+    N --> D[Painel financeiro DEMO]
+```
+
+Num dia comum isso acontece assim:
+
+1. **Capturo na hora.** No meio do jantar ou no corredor da escola eu escrevo
+   para a Sábia: *"lembrar de pagar o boleto da escola até sexta"*.
+2. **Ela classifica e grava.** Decide o quadrante de Eisenhower, grava a linha
+   na base de tarefas do Notion com a data de registro e responde dizendo em
+   que quadrante ficou.
+3. **Se tem data, vira compromisso.** O mesmo fluxo cria o evento na agenda,
+   conferindo antes se o horário já está ocupado. Nada é sobreposto por conta
+   própria.
+4. **De manhã, o briefing.** Um resumo do que está aberto e do que vence, para
+   eu não abrir quatro aplicativos antes das 7h.
+5. **No domingo, o ritual semanal.** Fecha a semana que terminou e abre a que
+   começa.
+6. **Quando concluo, eu aviso.** *"concluí a tarefa do boleto"* marca a linha
+   como feita e grava a data real de conclusão.
+7. **O painel mostra o resultado.** Onde as horas caíram, o que foi priorizado
+   e quanto do que entra realmente sai.
 
 Se a Sábia classificar errado, eu corrijo falando: *"muda a tarefa do boleto
-para importante e não urgente"*. Quando o texto não basta para decidir um dos
-eixos, ela adota a opção conservadora e diz qual suposição fez, em vez de
-escolher no escuro.
+para importante e não urgente"*. Quando a frase não dá para decidir um dos
+eixos, ela usa a opção conservadora e diz qual suposição fez.
 
-### O caminho para o dia em que a janela não existe
+A captura é independente da execução. A tarefa entra na fila no segundo em que
+eu penso nela, mesmo num dia em que eu não tenho nenhum minuto livre. Isso
+importa porque a minha rede de apoio é combinada, não contratada: filho doente
+ou imprevisto da minha mãe derruba a noite inteira, e o sistema precisa
+continuar guardando o que eu não consegui fazer.
 
-Nenhum plano construído sobre a disponibilidade da minha mãe pode assumir que
-ela sempre estará lá. Por isso a captura é independente da execução: a tarefa
-entra na fila no segundo em que eu penso nela, mesmo que eu não tenha nenhum
-minuto livre naquele dia. O sistema aceita que a noite caia, e continua
-guardando o que eu não consegui fazer.
+## 5. Tarefas e prioridades
 
-## 3. As técnicas de produtividade aplicadas
+O Notion está dividido em nove territórios: Início, Família e Lar, Projetos,
+Alimentação, Rotina Pessoal, Conhecimento, Finanças e Recursos, Documentos e
+Planejamento e Produtividade.
 
-| Técnica | Como está aplicada aqui | O que foi adaptado |
-|---|---|---|
-| **Matriz de Eisenhower** | toda tarefa registrada recebe um dos quatro quadrantes, automaticamente, e o painel mostra a distribuição | o método pressupõe controle sobre a própria agenda e poder de delegar. Aqui ele só classifica o que é decisão negociável; imprevisto de filho não entra em quadrante nenhum |
-| **Registro do próximo micro-passo** | a tarefa guarda qual é o próximo passo concreto, não só o nome do projeto | a pesquisa de Gloria Mark mede em 23 minutos o custo de retomar uma tarefa interrompida. Em vez de proteger blocos longos de foco, que essa rotina não permite, o sistema barateia a retomada |
-| **Captura da carga mental** | o que precisa ser lembrado entra como item, não só o que precisa ser executado | listas de afazeres medem a parte errada do trabalho. O que exaure é lembrar, e é isso que sai da cabeça e vai para a base |
-| **Planejamento semanal** | ritual de domingo, que fecha uma semana e abre a outra | não é revisão de produtividade; é decidir a semana de uma vez, num horário em que dá |
-| **Planejamento de período** | blocos recorrentes de estudo, aula e trabalho reservados na agenda até 17/12/2026 | a janela é reservada antes de a semana começar, senão ela é ocupada por outra coisa |
+A base de tarefas é a lista **Prazos e tarefas**, dentro de Planejamento e
+Produtividade. Cada linha tem prazo, onde (Faculdade, Trabalho, Casa, Pessoal),
+prioridade pela Matriz de Eisenhower, data de registro e data de conclusão.
 
-## 4. Onde a Inteligência Artificial entra
+Outras duas bases entraram junto, porque elas disputam o mesmo tempo:
 
-A IA aqui não escreve o trabalho nem decide a vida. Ela faz **uma coisa só, e
-essa coisa é a que custa caro**: transformar uma frase solta, escrita com pressa,
-em um registro estruturado no lugar certo.
+- **Entregas**, base única ligada às disciplinas em Conhecimento. Toda entrega
+  da faculdade vive ali, com a disciplina relacionada, em vez de ficar espalhada
+  por página solta.
+- **Planejamento de Refeições**, em Família e Lar, ligado ao cardápio da
+  semana. Decidir o que vai ter para comer é parte do trabalho invisível que
+  consome o meu tempo, então ele entra no sistema como qualquer outra coisa.
 
-- **Compreensão da linguagem natural.** Não existe formulário, campo obrigatório
-  nem menu. Eu escrevo como falo e o modelo extrai título, data, hora e
-  categoria.
-- **Priorização.** O modelo decide o quadrante de Eisenhower a partir do texto e
-  explica a suposição quando o texto é ambíguo.
+## 6. Planejamento semanal e mensal
+
+São três camadas, da semana para o semestre.
+
+**A semana.** Os blocos recorrentes da seção 2 reservam o tempo antes da semana
+começar. No domingo, o ritual fecha a semana que terminou e abre a seguinte:
+mostra o que foi concluído, o que vence e as tarefas derivadas pelas regras
+se-então que eu cadastrei no Notion.
+
+**O mês.** A faculdade é rotativa, uma disciplina por mês, com entrega no fim
+do mês. A base de Entregas mostra isso em calendário, então eu vejo o pico
+chegando com semanas de antecedência.
+
+**O semestre.** O roadmap da e-Gig está no Notion em 17 fases, da fase 0 à 16,
+quebradas em **172 blocos de 3 horas**, 516 horas no total. Eu planejo **5
+blocos por semana**, de 29/09/2026 a 28/03/2027. Desses 172, 130 estão
+planejados e 42 são retroativos, 126 horas de trabalho que já aconteceram e que
+eu registrei para o roadmap partir do estado real.
+
+As fases 6 a 16 têm quadrante de Eisenhower: duas em Q1, urgente e importante, e
+nove em Q2, importante e não urgente. As fases 0 a 5 não têm, porque já estão
+concluídas. O status usa quatro cores, e o que está concluído não carrega
+prioridade.
+
+O roadmap tem visão de timeline, tabela por fase, agrupamento por quadrante,
+calendário por semana e uma lista de próximos blocos filtrada pelo que ainda
+não terminou.
+
+## 7. Gestão de compromissos
+
+Compromisso é diferente de tarefa. Tarefa é uma coisa que eu faço quando dá;
+compromisso é uma hora em que eu não estou disponível para mais nada. O que o
+sistema precisa acertar é a **duração real**, não só a hora de começar.
+
+Quando eu salvo um compromisso pela Sábia, ela guarda também quanto tempo eu
+fico presa nele. Com isso eu sei quanto me sobra de verdade. Quando a anotação
+é feita às pressas, acontece o contrário: eu fico com uma noção errada do tempo
+livre e conto com horas que não existem.
+
+### O caso do sábado 26/09/2026
+
+Um cachê do Wagner foi anotado de forma vaga, das 11h às 12h, sem local. Na
+verdade era um casamento no Vale dos Vinhedos, em Bento Gonçalves, com
+cerimônia, recepção e valsa. Ele saiu de casa de manhã e só se liberou às
+15h30, chegando às 17h.
+
+O planejamento da família foi montado em cima daquela hora anotada, como se ele
+já estivesse em casa ao meio-dia. Minha mãe estava com as crianças, tinha
+compromisso à tarde e teve que desmarcar. Ele estava com o meu carro, então eu
+também não pude buscar as crianças. Uma anotação errada quebrou o dia inteiro
+em cadeia.
+
+Refiz o agendamento com o bloqueio real, de porta a porta:
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/evidencias/agenda-26-09-antes-anotacao-vaga.jpg" alt="Agenda do dia 26 de setembro com um evento de 11h às 12h chamado possível casamento indicação celebri, sem local"></td>
+    <td width="50%"><img src="docs/evidencias/agenda-26-09-depois-bloqueio-real.jpg" alt="Agenda do dia 26 de setembro com um evento de 10h às 17h chamado casamento cerimônia recepção e valsa, Celébri Eventos, Vale dos Vinhedos, Bento Gonçalves"></td>
+  </tr>
+  <tr>
+    <td><b>Antes:</b> das 11h às 12h, título vago, sem local.</td>
+    <td><b>Depois:</b> das 10h às 17h, com contratante, local e as etapas do evento.</td>
+  </tr>
+</table>
+
+Os dois prints são da minha agenda real do dia 26/09/2026.
+
+## 8. A técnica aplicada: Matriz de Eisenhower
+
+A técnica escolhida é a Matriz de Eisenhower, aplicada em dois lugares: nas
+tarefas da lista Prazos e tarefas e nas fases do roadmap da e-Gig.
+
+Eu não uso a matriz na forma clássica. O método clássico supõe que quem
+prioriza tem controle sobre a própria agenda e autoridade para delegar, e isso
+não vale quando a prioridade chega pronta de outra pessoa. Filho doente e
+chamado da escola furam qualquer fila. Por isso a matriz aqui classifica só o
+que é decisão negociável: trabalho, projetos, entregas. O imprevisto de filho
+fica de fora, porque ali eu não decido nada, eu reajo.
+
+Duas práticas acompanham a matriz:
+
+- **Anotar o próximo micro-passo antes de ser interrompida.** Retomar uma
+  tarefa do zero custa caro, e eu sou interrompida o tempo todo. Em vez de
+  defender um bloco contínuo que quase nunca sobrevive, eu barateio a volta.
+- **Capturar a carga mental, e não só a tarefa.** O que me cansa é lembrar, não
+  executar. Então o que precisa ser lembrado entra como item igual ao que
+  precisa ser feito.
+
+O raciocínio completo, com as fontes e com o que não tem comprovação
+científica, está na parte teórica que acompanha esta entrega.
+
+## 9. Como a IA entra
+
+A IA aqui faz uma coisa só: transformar uma frase solta, escrita com pressa, em
+um registro estruturado no lugar certo.
+
+- **Linguagem natural.** Não existe formulário, campo obrigatório nem menu. Eu
+  escrevo ou falo como falo, e o modelo extrai título, data, hora e categoria.
+- **Priorização.** O modelo decide o quadrante de Eisenhower a partir do texto
+  e explica a suposição quando a frase é ambígua.
 - **Datas relativas.** "quinta que vem", "depois de amanhã" e "até sexta" viram
   data de calendário.
-- **Roteamento por domínio.** Agentes especializados cuidam de frentes
-  diferentes da vida, para que um pedido de casa não seja tratado com a mesma
-  régua de um pedido da faculdade.
+- **Leitura de documento por foto.** Em 26/09/2026 eu mandei a foto de uma
+  notinha de supermercado. O sistema reconheceu dois itens e R$ 39,47, pediu
+  confirmação de um trecho que estava apagado, registrou no ambiente DEMO e, no
+  reenvio da mesma foto, não duplicou nada.
 - **Degradação segura.** Quando a rota de IA não está disponível, um
-  classificador local por palavras-chave assume. O sistema perde precisão e
-  continua de pé; ele nunca deixa de guardar o que eu mandei.
+  classificador local por palavra-chave assume. O sistema perde precisão e
+  continua de pé, mas nunca deixa de guardar o que eu mandei.
 
-A rota inteligente ativa é **OpenClaw com provider OpenAI/Codex**, autenticada
-por OAuth. O projeto não guarda chave de provedor de IA.
+A rota ativa é OpenClaw com provider OpenAI/Codex, autenticada por OAuth.
 
-## 5. O painel de produtividade
+## 10. O painel de produtividade
 
-O painel responde à pergunta que o resto do sistema não responde: **isso está
-funcionando?** Ele é gerado com um comando, sai como um HTML de arquivo único
-que abre offline, e lê duas fontes reais — a base de tarefas no Notion e a
-Google Agenda.
+O painel responde à pergunta que o resto do sistema não responde: isso está
+funcionando? Ele é gerado por um comando, sai como um HTML de arquivo único que
+abre offline, e lê duas fontes reais, a base de tarefas no Notion e a Google
+Agenda.
 
 ```bash
 python3 -m sop painel              # com os meus dados
@@ -133,63 +289,27 @@ python3 -m sop painel --exemplo    # com dados fictícios, sem credencial nenhum
 ### O que ele mostra
 
 - **A agenda antes e depois.** Compromissos por mês nos últimos doze meses,
-  separados entre pontuais (o que apareceu e teve que ser encaixado) e
-  recorrentes (o que eu reservei). É o retrato mais honesto do que mudou.
-- **Como a semana está cheia.** Horas já comprometidas por dia da semana.
+  separados entre pontuais e recorrentes.
+- **Como a semana está cheia.** Horas comprometidas por dia da semana.
 - **A que horas o dia acontece.** Manhã, tarde e noite.
-- **As janelas de estudo.** Quantas horas estão reservadas, em que dias, até quando.
-- **O que é urgente e o que é importante.** Distribuição das tarefas pelos
-  quatro quadrantes.
+- **As janelas de estudo.** Quantas horas estão reservadas, em que dias, até
+  quando.
+- **O que é urgente e o que é importante.** Distribuição pelos quatro
+  quadrantes.
 - **Quanto do que entra realmente sai.** Concluídas contra registradas, e a
   mediana de dias entre registrar e concluir.
 - **Em que frente a tarefa cai.** Faculdade, casa, trabalho e pessoal.
 
-### O que ele ainda não consegue medir, e por quê
-
-O painel **não preenche buraco com estimativa**. A classificação por quadrante e
-a data de conclusão passaram a ser gravadas em **26/09/2026**; o que é anterior
-a essa data não tem esses campos porque o dado não existia. Onde falta medição,
-o painel escreve a razão no lugar do número, como se vê no terceiro print
-abaixo. Duas consequências hoje:
-
-- **as 14 tarefas anteriores aparecem como "sem quadrante"**, e não como zero
-  distribuído entre os quadrantes;
-- **o tempo entre registrar e concluir ainda não é calculável**, porque as
-  tarefas concluídas antes de 26/09 não têm data de conclusão.
-
-O painel também mostra horas de estudo **reservadas**, não cumpridas: a agenda
-não registra presença. Quanto dessas horas virou estudo de verdade só passa a
-ser mensurável conforme eu for fechando as tarefas.
-
-### Privacidade não é opcional aqui
-
-O conteúdo das minhas tarefas é real e inclui saúde das minhas crianças. Por
-isso o painel foi construído para ser **incapaz** de vazar texto, e não apenas
-configurado para não vazar:
-
-- os conversores de fronteira devolvem registros que **não têm campo de texto
-  nenhum**. Depois da fronteira, o conteúdo não existe mais na memória do
-  processo;
-- o título de um compromisso é lido **uma única vez**, por uma função só, para
-  decidir se aquilo é estudo ou trabalho, e é descartado na mesma expressão;
-- a classificação é conservadora de propósito: só entra em "Estudo" ou
-  "Trabalho" o que casa com um termo explícito. Consulta médica e escola caem em
-  "Outros" e **não são caracterizadas de forma nenhuma**;
-- um teste automatizado alimenta o painel com títulos sensíveis e falha se
-  qualquer pedaço deles aparecer no HTML gerado;
-- o HTML fica fora do versionamento. O que entra no repositório são os prints
-  abaixo, que por construção só contêm contagem, quadrante, horário e data.
-
 ### Prints
 
-Capturas do painel gerado com os dados reais em 28/09/2026. Nenhuma delas
-contém texto de tarefa ou de compromisso.
+Capturas do painel gerado com dados reais em 28/09/2026. Nenhuma delas contém
+texto de tarefa ou de compromisso.
 
 **Visão geral, indicadores e a mudança na agenda**
 
 ![Painel de produtividade: cabeçalho, indicadores e compromissos por mês](docs/evidencias/painel-produtividade-visao-geral.png)
 
-**Como a semana está cheia, em que turno ela pesa e as janelas de estudo**
+**Carga por dia da semana, por turno e janelas de estudo**
 
 ![Painel de produtividade: carga por dia da semana, por período do dia e blocos de estudo](docs/evidencias/painel-produtividade-semana.png)
 
@@ -201,79 +321,63 @@ contém texto de tarefa ou de compromisso.
 
 ![Painel de produtividade aberto em tela estreita](docs/evidencias/painel-produtividade-mobile.png)
 
-### Acessibilidade e leitura
+### O que ele ainda não mede, e por quê
+
+O painel não preenche buraco com estimativa. O quadrante e a data de conclusão
+começaram a ser gravados em 26/09/2026, e o que é anterior a essa data não tem
+esses campos porque o dado não existia. Onde falta medição, o painel escreve a
+razão no lugar do número. Hoje isso dá duas consequências:
+
+- as 14 tarefas anteriores aparecem como "sem quadrante", e não como zero
+  distribuído entre os quadrantes;
+- o tempo entre registrar e concluir ainda não é calculável, porque as tarefas
+  concluídas antes de 26/09 não têm data de conclusão.
+
+O painel também mostra horas de estudo reservadas, não cumpridas. A agenda não
+registra presença.
+
+### Privacidade e acessibilidade
+
+O conteúdo das minhas tarefas é real e inclui saúde das minhas crianças. Por
+isso o painel foi construído para ser incapaz de vazar texto, e não apenas
+configurado para não vazar:
+
+- os conversores de fronteira devolvem registros sem nenhum campo de texto.
+  Depois da fronteira, o conteúdo não existe mais na memória do processo;
+- o título de um compromisso é lido uma vez só, por uma função só, para decidir
+  se aquilo é estudo ou trabalho, e é descartado na mesma expressão;
+- a classificação é conservadora: só entra em "Estudo" ou "Trabalho" o que casa
+  com um termo explícito. Consulta médica e escola caem em "Outros";
+- um teste automatizado alimenta o painel com títulos sensíveis e falha se
+  qualquer pedaço deles aparecer no HTML;
+- o HTML fica fora do versionamento. O que entra no repositório são os prints
+  acima, que por construção só contêm contagem, quadrante, horário e data.
 
 Cada gráfico traz uma tabela equivalente dobrável, para quem não distingue as
 cores e para leitor de tela. A paleta foi verificada contra visão de cores e
-contraste nos modos claro e escuro, e o painel segue a preferência de tema do
-sistema operacional.
+contraste no modo claro e no escuro, e o painel segue o tema do sistema
+operacional.
 
-## 6. O painel financeiro DEMO
+## 11. O painel financeiro DEMO
 
-Além do painel de produtividade, existe um dashboard financeiro publicado na
-web, em modo **estritamente de demonstração**. Ele nasceu da leitura de nota
-fiscal por foto: eu mando a foto da notinha e o item vira lançamento.
+Existe também um painel financeiro publicado na web, em modo estritamente de
+demonstração. Ele nasceu da leitura de nota fiscal por foto descrita na seção 9.
 
 **Acesso:** <https://sabia-dashboard-demo.vercel.app>
 
 Ele consulta apenas bases marcadas como DEMO, descarta toda linha que não esteja
-explicitamente marcada assim, aceita somente `GET` e não devolve identificadores
-internos. **A gravação no financeiro real não está autorizada e não está
-ligada.** As imagens e o roteiro estão em
-[`docs/demo-nota-pitch.md`](docs/demo-nota-pitch.md) e
-[`docs/evidencias/`](docs/evidencias/).
+marcada assim, aceita somente `GET` e não devolve identificador interno. A
+gravação no meu financeiro real não está autorizada e não está ligada.
 
-![Dashboard financeiro DEMO em desktop](docs/evidencias/vercel-dashboard-desktop.png)
+![Painel financeiro DEMO em desktop](docs/evidencias/vercel-dashboard-desktop.png)
 
-## 7. Ferramentas utilizadas
-
-| Ferramenta | Papel na minha rotina | Por que ela |
-|---|---|---|
-| **Telegram** | onde eu falo com o sistema | é o aplicativo que já está na minha mão quando a demanda aparece. Um ponto único de captura, em vez de quatro |
-| **Notion** | onde as tarefas, regras e registros moram | eu consigo abrir, filtrar e corrigir sem depender do sistema nem escrever SQL |
-| **Google Agenda** | onde os compromissos e as janelas protegidas vivem | é a agenda que eu já consulto, e é compartilhável com a família |
-| **OpenAI/Codex via OpenClaw** | a compreensão da linguagem natural e a priorização | mantém a rota inteligente separada das credenciais das demais integrações |
-| **Python + pytest** | a cola entre tudo e a garantia de que não quebrou | |
-| **Vercel** | hospedagem do dashboard DEMO | |
-
-### As integrações, em detalhe
-
-| Serviço | Autenticação | Uso |
-|---|---|---|
-| Telegram Bot API | token do bot e allowlist de usuário/chat | entrada e resposta |
-| Google Calendar API v3 | OAuth 2.0 ou conta de serviço | consulta e criação de eventos |
-| Notion API | Bearer token, páginas compartilhadas explicitamente | banco no-code |
-| OpenAI/Codex via OpenClaw | OAuth por device-code | classificação e orquestração |
-
-## 8. O fluxo, em diagrama
-
-```mermaid
-flowchart LR
-    B[Bruna no Telegram] --> TG[Telegram Bot API]
-    TG --> F[(Fila durável)]
-    F --> S[Sábia<br/>orquestradora]
-    S <--> IA[OpenClaw<br/>OpenAI/Codex]
-    S --> N[(Notion<br/>tarefas e regras)]
-    S -->|itens com data| G[Google Calendar API]
-    S --> TG
-    N --> P[Painel de<br/>produtividade]
-    G --> P
-    N --> D[Dashboard DEMO<br/>Vercel]
-```
-
-A captura e o processamento são independentes: a mensagem entra na fila antes de
-qualquer chamada externa. Se uma integração falhar, o sistema preserva o item e
-informa a falha, em vez de perder o registro em silêncio. O fluxo completo, os
-estados da fila e os mecanismos de autenticação estão em
-[`docs/fluxo.md`](docs/fluxo.md).
-
-## 9. Como usar a solução
+## 12. Como utilizar a solução
 
 ### Pré-requisitos
 
 - Python 3.10 ou superior e Git;
-- credenciais próprias, **apenas** se você quiser ligar as integrações reais;
-- Node.js/OpenClaw somente para executar a rota inteligente completa.
+- credenciais próprias, apenas se você quiser ligar as integrações reais;
+- Node.js e OpenClaw somente para a rota de IA completa.
 
 ### Instalação
 
@@ -295,7 +399,7 @@ python3 -m sop painel --exemplo   # gera o painel com dados fictícios
 ```
 
 Esses comandos não chamam API nenhuma, não gravam nada e não usam dado real.
-O painel sai em `painel/painel.html`; basta abrir no navegador.
+O painel sai em `painel/painel.html`, basta abrir no navegador.
 
 ### Ligar as integrações
 
@@ -305,7 +409,7 @@ python3 scripts/verificar_config.py
 ```
 
 Preencha só o necessário. O [`.env.example`](.env.example) documenta todas as
-opções sem valores secretos.
+opções sem valor secreto.
 
 | Integração | Variáveis |
 |---|---|
@@ -316,7 +420,7 @@ opções sem valores secretos.
 | Geral | `TIMEZONE`, `FILA_DIR` |
 | Ambiente DEMO | `SABIA_DEMO` e os IDs das fontes DEMO |
 
-Nunca versione o `.env`, tokens OAuth, chaves, arquivos de sessão ou backups.
+Nunca versione o `.env`, token OAuth, chave, arquivo de sessão ou backup.
 O preparo das bases está em [`docs/openclaw.md`](docs/openclaw.md),
 [`docs/google-agenda.md`](docs/google-agenda.md) e
 [`docs/deploy-vercel-demo.md`](docs/deploy-vercel-demo.md).
@@ -336,9 +440,9 @@ python3 -m sop escutar   # terminal 1
 python3 -m sop worker    # terminal 2
 ```
 
-## 10. Testes e evidências
+## 13. Testes e segurança
 
-Execução fresca em **28 de setembro de 2026**:
+Execução em 28/09/2026:
 
 ```bash
 python3 -m pytest
@@ -348,86 +452,60 @@ bash scripts/varredura_seguranca.sh
 # RESULTADO: limpo. Nenhum padrão sensível encontrado.
 ```
 
-Os 365 testes são locais: clientes HTTP e integrações externas são substituídos
-por dublês, sem rede nem credencial real. A suíte cobre, entre outros pontos:
+Os testes são locais: cliente HTTP e integração externa são substituídos por
+dublês, sem rede e sem credencial real. A suíte cobre classificação, datas
+relativas, os clientes de Telegram, Notion e Google, OAuth e allowlist,
+persistência e retentativa da fila, as automações diária e semanal, a leitura de
+nota DEMO, a API do painel financeiro e o painel de produtividade, incluindo o
+descarte de texto na fronteira e a garantia de que nenhum título sensível
+aparece no HTML gerado.
 
-- classificação, datas relativas e validação de lacunas;
-- clientes Telegram, Notion e Google Agenda;
-- OAuth, allowlist e não vazamento de token em erros;
-- persistência, retentativa e recuperação da fila;
-- automações diária e semanal;
-- OpenClaw, MCP de agenda e nota DEMO;
-- API e responsividade funcional do dashboard;
-- **o painel de produtividade: o descarte de texto na fronteira, as contas de
-  cada gráfico, a recusa a estimar o que não pode ser medido, e a garantia de
-  que nenhum título sensível aparece no HTML gerado**;
-- padrões de segredos e dados pessoais no conteúdo versionado.
+Sobre segurança e LGPD: credencial entra por ambiente ou por arquivo externo com
+permissão restrita e nunca é versionada; o Telegram aceita somente IDs
+autorizados; o Google usa escopo de calendário e o Notion enxerga só as páginas
+compartilhadas com a integração; o painel público é somente leitura, filtra
+dados DEMO e aplica CSP, HSTS e `nosniff`; erro público é genérico e não revela
+token nem ID interno; e eu continuo podendo revisar e corrigir tudo direto no
+Notion. Detalhes no [modelo de segurança](docs/seguranca.md).
 
-## 11. Segurança, LGPD e governança
-
-- credenciais entram por ambiente ou por arquivos externos com permissão
-  restrita; nenhuma credencial é versionada;
-- o Telegram aceita somente IDs autorizados e descarta em silêncio origens
-  desconhecidas;
-- o Google usa escopo de calendário e tokens renováveis; o Notion enxerga
-  somente as páginas compartilhadas com a integração;
-- o painel de produtividade minimiza por construção: o conteúdo pessoal é
-  descartado na fronteira e o arquivo gerado não é versionado;
-- o dashboard público é somente leitura, filtra dados DEMO e aplica CSP, HSTS,
-  `nosniff`, política de referência e restrições de permissões;
-- erros públicos são genéricos e não revelam tokens, IDs internos ou respostas
-  cruas de provedores;
-- eu continuo podendo revisar e corrigir tudo direto no Notion;
-- a varredura automatizada bloqueia padrões de token, chave privada e dados
-  pessoais antes de qualquer entrega.
-
-Mais detalhes no [modelo de segurança](docs/seguranca.md).
-
-## 12. Estrutura do repositório
+## 14. Estrutura do repositório
 
 ```text
 .
 ├── agentes/             definições dos agentes de domínio
-├── api/                 endpoint serverless do dashboard DEMO
+├── api/                 endpoint serverless do painel DEMO
 ├── dashboard/           interface web e snapshot DEMO
 ├── docs/                arquitetura, fluxo, segurança e evidências
 ├── exemplos/            mensagens, regras, semana e painel fictícios
 ├── openclaw/            configuração gerada dos agentes
-├── sabia/               runtime e fila da instalação Sábia
+├── sabia/               runtime e fila
 ├── scripts/             configuração, automações, deploy e scans
 ├── src/sop/             aplicação Python e integrações
-│   ├── painel_produtividade.py   medição e anonimização na fronteira
-│   └── painel_html.py            renderização do painel
 ├── systemd/             unidades de serviço
 └── tests/               suíte automatizada
 ```
 
-## 13. Limitações conhecidas
+## 15. Limitações conhecidas
 
-- **a medição de produtividade começou em 26/09/2026.** O painel tem poucos dias
-  de histórico de tarefas classificadas, e diz isso na própria tela em vez de
-  disfarçar;
-- **o painel mede horas reservadas, não horas cumpridas.** A agenda não registra
-  presença;
-- a classificação de um compromisso entre estudo, trabalho e outros é feita por
+- a medição de produtividade começou em 26/09/2026, então o painel tem poucos
+  dias de histórico classificado, e diz isso na própria tela;
+- o painel mede horas reservadas, não horas cumpridas;
+- a classificação de um compromisso entre estudo, trabalho e outros é por
   palavra-chave no título. É conservadora, mas pode errar;
-- a execução completa exige contas e credenciais próprias para Telegram, Notion,
-  Google e OpenClaw/Codex;
-- o bot não é aberto ao público: a allowlist é uma decisão de segurança;
-- o dashboard financeiro público expõe apenas dados DEMO e é somente consulta;
-- a captura por áudio não está implementada: a entrada é por texto;
-- o parsing de PDF escaneado depende de conversão/OCR disponível no ambiente;
-- não há link de vídeo pitch versionado neste repositório.
+- rodar o sistema completo exige contas e credenciais próprias;
+- o bot não é aberto ao público, a allowlist é uma decisão de segurança;
+- o painel financeiro mostra apenas dados DEMO e é somente consulta;
+- o parsing de PDF escaneado depende de OCR disponível no ambiente;
+- não há vídeo pitch nesta entrega.
 
-## 14. Próximos passos
+## 16. Próximos passos
 
-- acumular semanas de dado classificado até o tempo de giro entre registrar e
-  concluir virar um número confiável;
+- acumular semanas de dado classificado até o tempo entre registrar e concluir
+  virar um número confiável;
 - registrar a conclusão dos blocos de estudo, para o painel comparar reservado
   com cumprido;
 - gerar o painel automaticamente no domingo, junto com o ritual semanal;
-- adicionar conversão local de páginas de PDF escaneado antes do OCR;
-- publicar o vídeo pitch e acrescentar aqui somente um link revisado e acessível.
+- adicionar conversão local de PDF escaneado antes do OCR.
 
 ## Documentação relacionada
 
@@ -436,7 +514,7 @@ Mais detalhes no [modelo de segurança](docs/seguranca.md).
 - [OpenClaw e rota OpenAI/Codex](docs/openclaw.md)
 - [Google Agenda](docs/google-agenda.md)
 - [Segurança](docs/seguranca.md)
-- [Deploy do dashboard DEMO](docs/deploy-vercel-demo.md)
+- [Deploy do painel DEMO](docs/deploy-vercel-demo.md)
 - [Demonstração da nota](docs/demo-nota-pitch.md)
 - [Evidências técnicas](docs/evidencias/)
 
